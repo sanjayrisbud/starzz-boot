@@ -62,7 +62,7 @@ One of the auto-generated files in our project is `StarzzBootApplication.java`:
 
 This file is in package `com.sanjayrisbud.starzzboot` and defines the class
 `StarzzBootApplication`, which serves as the entrypoint to our application.  It has the
-`@SpringBootApplication` annotation, which enables Spring Boot’s auto-configuration
+`@SpringBootApplication` annotation, which enables Spring Boot’s autoconfiguration
 and component scanning features.
 
 To build our web application, we add the **Spring Web** dependency in `pom.xml`. Maven resolves
@@ -76,7 +76,7 @@ and downloads it automatically from the configured repositories.
 (We remove the version number so Spring Boot can manage versioning for us).
 
 We also add the **Lombok** dependency, for automatic generation of getters, setters,
-constructors, etc:
+constructors, etc.:
 
     <dependency>
         <artifactId>lombok</artifactId>
@@ -142,3 +142,50 @@ argument is from the mapping annotation's argument (inside the curly braces).  T
 annotation indicates that the argument is from the body of the request.
 
 The other classes in the `controllers` package follow a similar logic.
+
+#### Chapter 2: Setting up the database
+
+Project dependencies added:
+
+    Spring Data JPA
+    MySQL Driver
+
+*The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to the
+format of requests used in this chapter.*
+
+We would first need some configuration to allow our application to interact with our **starzz**
+database on MySQL.  We would need to add a **MySQL driver** to allow our Java code to execute 
+SQL via JDBC:
+
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+(We add the scope because the driver is only needed at runtime and not needed to compile the code)
+
+Since JDBC provides low-level database access, we add **Spring Data JPA** on top of the driver to
+enable us to interact with the database on a higher level:
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+We add the two snippets above to `pom.xml` so Maven can automatically download the dependencies
+to our project.
+
+In `application.yaml` we add a data source for our application:
+    
+    datasource:
+        url: jdbc:mysql://localhost:3306/starzz
+        username: root
+        password: root
+    jpa:
+        show-sql: true
+
+(`username` and `password` are the credentials to our database server, accessible via `url`.
+We also set `show-sql` under `jpa` to `true` so the application will log the SQL that
+Spring Data JPA generates)
+
