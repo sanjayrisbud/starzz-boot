@@ -61,9 +61,13 @@ One of the auto-generated files in our project is `StarzzBootApplication.java`:
     }
 
 This file is in package `com.sanjayrisbud.starzzboot` and defines the class
-`StarzzBootApplication`, which serves as the entrypoint to our application.  It has the
-`@SpringBootApplication` annotation, which enables Spring Boot’s autoconfiguration
-and component scanning features.
+`StarzzBootApplication`, which serves as the entrypoint to our application.  The 
+`@SpringBootApplication` annotation enables component scanning, which instructs Spring to 
+discover and register application components as **beans** within the application context.
+
+In Spring, a bean is an object whose lifecycle is managed by the Spring container. Classes
+annotated with `@RestController`, `@Service`, or `@Repository` are automatically detected
+as beans and can be injected where needed.
 
 To build our web application, we add the **Spring Web** dependency in `pom.xml`. Maven resolves
 and downloads it automatically from the configured repositories.    
@@ -96,8 +100,8 @@ We define a class to hold plain responses to requests to our API endpoints.  In 
         private String text;
     }
 
-(We annotate the class with `@AllArgsConstructor`, `@Getter` and `@ToString` so **Lombok** 
-will generate a constructor, getter and toString() method for us.)
+(We annotate the class with `@AllArgsConstructor`, `@Getter` and `@ToString` so Lombok will
+generate a constructor, getter and toString() method for us.)
 
 When an instance of this class is returned as a response to an HTTP request, Spring Boot takes
 care of serializing the instance to JSON.  When an instance of the class is expected as a
@@ -143,6 +147,12 @@ annotation indicates that the argument is from the body of the request.
 
 The other classes in the `controllers` package follow a similar logic.
 
+So far, our controllers return hardcoded responses. While this is useful to verify that our
+routing layer works correctly, real-world applications persist and retrieve data from a database.
+
+In the next chapter, we introduce the persistence layer using Spring Data JPA and connect our
+application to a MySQL database.
+
 #### Chapter 2: Setting up the database
 
 Project dependencies added:
@@ -153,9 +163,13 @@ Project dependencies added:
 *The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to the
 format of requests used in this chapter.*
 
-We would first need some configuration to allow our application to interact with our **starzz**
-database on MySQL.  We would need to add a **MySQL driver** to allow our Java code to execute 
-SQL via JDBC:
+To persist and retrieve data, we now introduce a persistence layer. In Spring Boot applications,
+this is typically achieved using Spring Data JPA on top of a relational database.  In our case,
+it is our **starzz** database on MySQL.
+
+To allow our application to interact with the database, we would first need to add the
+**MySQL driver** to allow our code to execute SQL via JDBC (JDBC is a low-level API
+for accessing databases):
 
         <dependency>
             <groupId>com.mysql</groupId>
@@ -165,8 +179,10 @@ SQL via JDBC:
 
 (We add the scope because the driver is only needed at runtime and not needed to compile the code)
 
-Since JDBC provides low-level database access, we add **Spring Data JPA** on top of the driver to
-enable us to interact with the database on a higher level:
+The MySQL driver enables JDBC connectivity. We also add **Spring Data JPA** to provide
+higher-level, object-oriented database interaction.  (We use Spring Data JPA to
+interact with the database in an object-oriented way. Hibernate, the default JPA
+implementation, handles the actual SQL generation and persistence management.)
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -176,7 +192,8 @@ enable us to interact with the database on a higher level:
 We add the two snippets above to `pom.xml` so Maven can automatically download the dependencies
 to our project.
 
-In `application.yaml` we add a data source for our application:
+With dependencies added, we now configure our data source so Spring Boot can connect to the MySQL
+database.  In `application.yaml` we add the application's data source:
     
     datasource:
         url: jdbc:mysql://localhost:3306/starzz
@@ -187,5 +204,13 @@ In `application.yaml` we add a data source for our application:
 
 (`username` and `password` are the credentials to our database server, accessible via `url`.
 We also set `show-sql` under `jpa` to `true` so the application will log the SQL that
-Spring Data JPA generates)
+Hibernate generates.)
+
+We now create our code to interact with our database.
+
+Since Spring Data JPA allows us to work with database tables in an object-oriented way, we can
+add classes to abstract tables and the operations on them.  In `com.sanjayrisbud.starzzboot`,
+we add a new package, `models`, to contain the table abstractions.  An example class is
+`Constellation`:
+
 
