@@ -1,14 +1,23 @@
 package com.sanjayrisbud.starzzboot.controllers;
 
+import com.sanjayrisbud.starzzboot.dtos.ConstellationSummaryDto;
 import com.sanjayrisbud.starzzboot.dtos.Message;
+import com.sanjayrisbud.starzzboot.services.ConstellationService;
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@AllArgsConstructor
 @RestController
 @RequestMapping("/constellations")
 public class ConstellationController {
+
+    private ConstellationService constellationService;
+
     @GetMapping
-    public Message getConstellationList() {
-        return new Message("Successfully called getConstellationList()");
+    public List<ConstellationSummaryDto> getConstellationList() {
+        return constellationService.findAll();
     }
 
     @GetMapping("/{id}")

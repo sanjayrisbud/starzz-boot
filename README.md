@@ -2,7 +2,7 @@
 
 This is a REST API backend created using Java's Spring Boot framework.
 
-### The Dataset
+## The Dataset
 
 This project uses a database of fictional galaxies, constellations and stars.  
 
@@ -20,7 +20,7 @@ The database was created in MySQL.  The scripts to create the tables and
 load the dummy data are included in `assets` for reference.  
 
 
-### The Application
+## The Application
 
 This project was created in IntelliJ IDEA Ultimate.  It uses Java (OpenJDK), Maven and Spring Boot.
 
@@ -39,7 +39,7 @@ After clicking **Create**, IntelliJ generates the starter project files (the pro
 
 All code committed at each chapter is available with the commit message of the chapter name.
 
-#### Chapter 1: Setting up the routes
+### Chapter 1: Setting up the routes
 
 Project dependencies added:
 
@@ -48,7 +48,29 @@ Project dependencies added:
 
 *A Postman collection for all routes is included in* `assets/starzz-boot.postman_collection.json`
 
-One of the auto-generated files in our project is `StarzzBootApplication.java`:
+A Spring Boot application follows the MVC pattern for web applications.  So to build our application,
+we add the **Spring Web** dependency in `pom.xml`. When we add a dependency in `pom.xml`, Maven
+resolves and downloads it automatically from the configured repositories.
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+(We remove the version number so Spring Boot can manage versioning for us).
+
+We also add **Lombok** for automatic generation of getters, setters, constructors, etc.:
+
+    <dependency>
+        <artifactId>lombok</artifactId>
+        <groupId>org.projectlombok</groupId>
+        <scope>annotationProcessor</scope>
+    </dependency>
+
+(We add the scope because Lombok is only needed during compilation and shouldn't exist at runtime)
+
+One of the auto-generated files in our project is `StarzzBootApplication.java` in package
+`com.sanjayrisbud.starzzboot`:
 
     ... 
     @SpringBootApplication
@@ -60,38 +82,17 @@ One of the auto-generated files in our project is `StarzzBootApplication.java`:
     
     }
 
-This file is in package `com.sanjayrisbud.starzzboot` and defines the class
-`StarzzBootApplication`, which serves as the entrypoint to our application.  The 
-`@SpringBootApplication` annotation enables component scanning, which instructs Spring to 
-discover and register application components as **beans** within the application context.
+This file defines the class `StarzzBootApplication`, which serves as the entrypoint to our
+application.  The `@SpringBootApplication` annotation enables component scanning, which instructs
+Spring to discover and register application components as **beans** within the application context.
 
 In Spring, a bean is an object whose lifecycle is managed by the Spring container. Classes
-annotated with `@RestController`, `@Service`, or `@Repository` are automatically detected
+annotated with `@RestController`, `@Service`, or `@Component` are automatically detected
 as beans and can be injected where needed.
 
-To build our web application, we add the **Spring Web** dependency in `pom.xml`. Maven resolves
-and downloads it automatically from the configured repositories.    
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-(We remove the version number so Spring Boot can manage versioning for us).
-
-We also add the **Lombok** dependency, for automatic generation of getters, setters,
-constructors, etc.:
-
-    <dependency>
-        <artifactId>lombok</artifactId>
-        <groupId>org.projectlombok</groupId>
-        <scope>annotationProcessor</scope>
-    </dependency>
-
-(We add the scope because Lombok is only needed during compilation and shouldn't exist at runtime)
-
-We define a class to hold plain responses to requests to our API endpoints.  In package
-`com.sanjayrisbud.starzzboot` we add a new package, `dtos`.  In this package we create `Message`:
+We now define our application's endpoints.  First we define a class to hold plain responses to
+requests to our API endpoints.  In package `com.sanjayrisbud.starzzboot` we add a new package,
+`dtos`.  In this package we create a class `Message`:
 
     @AllArgsConstructor
     @Getter
@@ -153,7 +154,7 @@ routing layer works correctly, real-world applications persist and retrieve data
 In the next chapter, we introduce the persistence layer using Spring Data JPA and connect our
 application to a MySQL database.
 
-#### Chapter 2: Setting up the database
+### Chapter 2: Setting up the database
 
 Project dependencies added:
 
@@ -189,8 +190,7 @@ implementation, handles the actual SQL generation and persistence management.)
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-We add the two snippets above to `pom.xml` so Maven can automatically download the dependencies
-to our project.
+We add the snippets above to `pom.xml`.
 
 With dependencies added, we now configure our data source so Spring Boot can connect to the MySQL
 database.  In `application.yaml` we add the application's data source:
@@ -213,4 +213,128 @@ add classes to abstract tables and the operations on them.  In `com.sanjayrisbud
 we add a new package, `models`, to contain the table abstractions.  An example class is
 `Constellation`:
 
+    ...
+    @Entity
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    @Table(name = "constellations")
+    public class Constellation {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(name = "constellation_id")
+        private Integer id;
+    
+        @Column(name = "constellation_name")
+        private String name;
+    ...
+
+The `@Entity` annotation specifies that the class is an abstraction of a database table, and
+`@Table` specifies the actual table name.  Each instance of this class represents one record
+in the table.  `@AllArgsConstructor`, `@NoArgsConstructor`, `@Getter` and `@Setter` are for
+Lombok to generate a constructor requiring all fields, a default constructor, getters and setters
+for all fields, respectively (these Lombok-generated methods are needed by Spring Data JPA).
+
+We then have fields with `@Column` corresponding to the table columns.  `@Id` indicates the
+primary key and `@GeneratedValue` indicates that the value is generated by the table.
+
+We then define relationships with other entities.  Schema-wise, we have a many-to-one relationship
+between `constellations` and `galaxies`; the foreign key is `galaxy_id`  We express that relationship
+using:
+
+    ...
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "galaxy_id")
+    private Galaxy galaxy;
+    ...
+
+Our entity for the `galaxies` table is `Galaxy`; we define a field `galaxy` to refer to it.  Since
+this field uses a foreign key to refer to the parent `Galaxy` we annotate the field with
+`@JoinColumn` to specify the foreign key.  `@ManyToOne` specifies the relationship.  For these
+types of relationships, the default behavior of Spring Data JPA when it loads a particular entity
+into memory is to automatically fetch the related entity.  This is called eager loading.  In our 
+case, we indicate `fetch` to override this default and tell Spring Data JPA to fetch the related
+entity only when we explicitly ask for it, which is called lazy loading.
+
+In addition, this field has a symmetric field in the entity `Galaxy`:
+
+    @OneToMany(targetEntity = Constellation.class, mappedBy = "galaxy")
+    private Set<Constellation> constellations = new HashSet<>();
+
+This field does not correspond to a physical column in the `galaxies` table; it represents the
+inverse side of the relationship.  It is a field for the set of its children `Constellation`
+objects.  `@OneToMany` specifies  the relationship, `targetEntity` indicates the related entity,
+and `mappedBy` indicates the symmetric field.
+
+Two other fields in `Constellation` are defined similarly:
+
+    ...
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "added_by")
+    private User addedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_by")
+    private User verifiedBy;
+    ...
+
+The symmetric fields in the `User` entity corresponding to the table `users`:
+
+    @OneToMany(targetEntity = Constellation.class, mappedBy = "addedBy")
+    private Set<Constellation> constellationsAdded = new HashSet<>();
+
+    @OneToMany(targetEntity = Constellation.class, mappedBy = "verifiedBy")
+    private Set<Constellation> constellationsVerified = new HashSet<>();
+
+The other classes in the `models` package follow a similar logic.
+
+Now that we have defined our entities as object-oriented representations of database tables,
+we introduce the repository layer.  While entities abstract the structure of our tables, 
+repositories abstract the operations performed on those entities. They provide a clean interface
+for querying, saving, updating, and deleting data without requiring us to write SQL manually.
+
+Our repositories extend the interface `JpaRepository`. Spring Data JPA automatically generates
+implementations of these interface at runtime and registers them as beans in the application
+context. This allows the repositories to be injected into services or controllers where needed.
+
+In `com.sanjayrisbud.starzzboot`, we add a new package, `repositories`, to contain the repositories.
+An example interface is`ConstellationRepository`:
+
+    ...
+    public interface ConstellationRepository extends JpaRepository<Constellation, Integer> {
+    }
+
+The other interfaces in the `repositories` package follow a similar logic.
+
+Whenever we send data as part of responses, we usually don't send raw entities from our database.
+We create mappings from our entities to custom objects, and send those objects instead.  These
+custom objects are known as data transfer objects.  We need to create DTOs for our entities.
+In `com.sanjayrisbud.starzzboot.dtos`, we add our DTOs.  An example class is `ConstellationSummaryDto`:
+
+    ...
+    @Data
+    @AllArgsConstructor
+    public class ConstellationSummaryDto {
+        private Integer constellationId;
+        private String constellationName;
+    }
+    ...
+
+This class only has fields for the constellation's id and name.  `@Data` is a shorthand way to
+tell Lombok to generate getters and setters for all fields.
+
+
+We would need some classes to map entities to DTOs.  The **MapStruct** dependency can help
+generate mapping for us, but for the purposes of this application we will generate them manually.
+In `com.sanjayrisbud.starzzboot`, we add a new package, `mappers`, to contain the classes for
+our entity mappers.  An example class is`ConstellationMapper`:
+
+
+We now introduce a service layer to contain our application's business logic.  Introducing a
+service layer ensures a clean separation of concerns; controllers can focus solely on HTTP
+request handling and not need to worry about the business rules.
+
+In `com.sanjayrisbud.starzzboot`, we add a new package, `services`, to contain the classes for our
+service layer.  An example class is`ConstellationService`:
 
