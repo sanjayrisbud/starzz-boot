@@ -18,12 +18,13 @@ public class UserMapper {
         if (user == null)
             return null;
 
-        return new UserDetailsDto(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getDateOfBirth());
+        return UserDetailsDto.builder()
+                .userId(user.getId())
+                .username(user.getName())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .dateOfBirth(user.getDateOfBirth())
+                .build();
     }
 }

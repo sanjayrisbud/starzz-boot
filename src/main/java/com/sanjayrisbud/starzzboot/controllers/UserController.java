@@ -1,19 +1,33 @@
 package com.sanjayrisbud.starzzboot.controllers;
 
 import com.sanjayrisbud.starzzboot.dtos.Message;
+import com.sanjayrisbud.starzzboot.dtos.UserDetailsDto;
+import com.sanjayrisbud.starzzboot.dtos.UserSummaryDto;
+import com.sanjayrisbud.starzzboot.services.UserService;
+import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@AllArgsConstructor
 @RestController
 @RequestMapping("/users")
 public class UserController {
+    private final UserService userService;
+
     @GetMapping
-    public Message getUserList() {
-        return new Message("Successfully called getUserList()");
+    public List<UserSummaryDto> getUserList() {
+        return userService.getUserList();
     }
 
     @GetMapping("/{id}")
-    public Message getUser(@PathVariable Long id) {
-        return new Message("Successfully called getUser(" + id + ")");
+    public ResponseEntity<UserDetailsDto> getUser(@PathVariable Integer id) {
+        var user = userService.getUser(id);
+        if (user == null)
+            return ResponseEntity.notFound().build();
+
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping

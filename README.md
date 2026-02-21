@@ -164,6 +164,8 @@ Project dependencies added:
 *The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to the
 format of requests used in this chapter.*
 
+#### The Persistence Layer
+
 To persist and retrieve data, we now introduce a persistence layer. In Spring Boot applications,
 this is typically achieved using Spring Data JPA on top of a relational database.  In our case,
 it is our **starzz** database on MySQL.
@@ -307,14 +309,20 @@ An example interface is`ConstellationRepository`:
 
 The other interfaces in the `repositories` package follow a similar logic.
 
+#### API Representation Layer
+
 Whenever we send data as part of responses, we usually don't send raw entities from our database.
 We create mappings from our entities to custom objects, and send those objects instead.  These
 custom objects are known as data transfer objects.  We need to create DTOs for our entities.
 In `com.sanjayrisbud.starzzboot.dtos`, we add our DTOs.  An example class is `ConstellationSummaryDto`:
 
     ...
-    @Data
     @AllArgsConstructor
+    @Data
+    @JsonPropertyOrder({
+        "constellationId",
+        "constellationName"
+    })
     public class ConstellationSummaryDto {
         private Integer constellationId;
         private String constellationName;
@@ -322,14 +330,78 @@ In `com.sanjayrisbud.starzzboot.dtos`, we add our DTOs.  An example class is `Co
     ...
 
 This class only has fields for the constellation's id and name.  `@Data` is a shorthand way to
-tell Lombok to generate getters and setters for all fields.
+tell Lombok to generate getters and setters for all fields.  `@JsonPropertyOrder` specifies
+the order of displaying the fields in the output.
 
+Another example is `ConstellationDetailsDto`:
 
-We would need some classes to map entities to DTOs.  The **MapStruct** dependency can help
-generate mapping for us, but for the purposes of this application we will generate them manually.
+    ...
+    @Builder
+    @Data
+    @JsonPropertyOrder({
+        "constellationId",
+        "constellationName",
+        "galaxy",
+        "addedBy",
+        "verifiedBy"
+    })
+    public class ConstellationDetailsDto {
+        private Integer constellationId;
+        private String constellationName;
+        private GalaxySummaryDto galaxy;
+        private UserSummaryDto addedBy;
+        private UserSummaryDto verifiedBy;
+    }
+
+This DTO has additional fields to display the parent galaxy, and the adder and verifier.  These
+fields are themselves DTOs.  Since details DTOs have more fields than summary DTOs, we create
+objects using the builder pattern instead of a regular constructor.  This improves readability
+by showing which values are assigned to which fields.  `@Builder` from Lombok helps with this.
+
+The other classes in the `dtos` package follow a similar logic.
+
+We would then need classes to map entities to DTOs.  The **MapStruct** dependency can help
+generate mappings for us, but for the purposes of this application we will generate them manually.
 In `com.sanjayrisbud.starzzboot`, we add a new package, `mappers`, to contain the classes for
-our entity mappers.  An example class is`ConstellationMapper`:
+our entity mappers.  An example class is `ConstellationMapper`:
 
+    ...
+    @AllArgsConstructor
+    @Component
+    public class ConstellationMapper {
+        private final GalaxyMapper galaxyMapper;
+        private final UserMapper userMapper;
+    
+        public ConstellationSummaryDto toSummaryDto(Constellation constellation) {
+            if (constellation == null)
+                return null;
+    
+            return new ConstellationSummaryDto(constellation.getId(), constellation.getName());
+        }
+
+        public ConstellationDetailsDto toDetailsDto(Constellation constellation) {
+            if (constellation == null)
+                return null;
+    
+            var galaxy = galaxyMapper.toSummaryDto(constellation.getGalaxy());
+            var addedBy = userMapper.toSummaryDto(constellation.getAddedBy());
+            var verifiedBy = userMapper.toSummaryDto(constellation.getVerifiedBy());
+    
+            return ConstellationDetailsDto.builder()
+                    .constellationId(constellation.getId())
+                    .constellationName(constellation.getName())
+                    .galaxy(galaxy)
+                    .addedBy(addedBy)
+                    .verifiedBy(verifiedBy)
+                    .build();
+        }
+    }
+
+`@Component` tags this class as a bean.  In `toSummaryDto()` we create a summary DTO using a regular
+constructor.  In `toDetailsDto()` we first get summary DTOs of the related entities, then use the
+builder pattern to create the details DTO one field at a time.
+
+The other classes in the `mappers` package follow a similar logic.
 
 We now introduce a service layer to contain our application's business logic.  Introducing a
 service layer ensures a clean separation of concerns; controllers can focus solely on HTTP

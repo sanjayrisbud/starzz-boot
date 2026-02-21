@@ -25,7 +25,7 @@ public class Galaxy {
     private String name;
 
     @Column(name = "galaxy_type")
-    private Integer type;
+    private String type;
 
     @Column(name = "distance_mly")
     private Integer distanceMly;

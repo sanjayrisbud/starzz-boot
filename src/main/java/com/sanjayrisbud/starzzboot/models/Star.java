@@ -22,7 +22,7 @@ public class Star {
     private String name;
 
     @Column(name = "star_type")
-    private Integer type;
+    private String type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "constellation_id")
@@ -47,6 +47,4 @@ public class Star {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verified_by")
     private User verifiedBy;
-
-
 }

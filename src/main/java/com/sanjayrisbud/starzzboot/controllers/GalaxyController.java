@@ -1,19 +1,33 @@
 package com.sanjayrisbud.starzzboot.controllers;
 
+import com.sanjayrisbud.starzzboot.dtos.GalaxyDetailsDto;
+import com.sanjayrisbud.starzzboot.dtos.GalaxySummaryDto;
 import com.sanjayrisbud.starzzboot.dtos.Message;
+import com.sanjayrisbud.starzzboot.services.GalaxyService;
+import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@AllArgsConstructor
 @RestController
 @RequestMapping("/galaxies")
 public class GalaxyController {
+    private final GalaxyService galaxyService;
+
     @GetMapping
-    public Message getGalaxyList() {
-        return new Message("Successfully called getGalaxyList()");
+    public List<GalaxySummaryDto> getGalaxyList() {
+        return galaxyService.getGalaxyList();
     }
 
     @GetMapping("/{id}")
-    public Message getGalaxy(@PathVariable Long id) {
-        return new Message("Successfully called getGalaxy(" + id + ")");
+    public ResponseEntity<GalaxyDetailsDto> getGalaxy(@PathVariable Integer id) {
+        var galaxy = galaxyService.getGalaxy(id);
+        if (galaxy == null)
+            return ResponseEntity.notFound().build();
+
+        return ResponseEntity.ok(galaxy);
     }
 
     @PostMapping

@@ -1,9 +1,11 @@
 package com.sanjayrisbud.starzzboot.controllers;
 
+import com.sanjayrisbud.starzzboot.dtos.ConstellationDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.ConstellationSummaryDto;
 import com.sanjayrisbud.starzzboot.dtos.Message;
 import com.sanjayrisbud.starzzboot.services.ConstellationService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,12 +19,15 @@ public class ConstellationController {
 
     @GetMapping
     public List<ConstellationSummaryDto> getConstellationList() {
-        return constellationService.findAll();
+        return constellationService.getConstellationList();
     }
 
     @GetMapping("/{id}")
-    public Message getConstellation(@PathVariable Long id) {
-        return new Message("Successfully called getConstellation(" + id + ")");
+    public ResponseEntity<ConstellationDetailsDto> getConstellation(@PathVariable Integer id) {
+        var constellation = constellationService.getConstellation(id);
+        if (constellation == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(constellation);
     }
 
     @PostMapping
