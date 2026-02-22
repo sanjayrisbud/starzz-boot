@@ -3,6 +3,7 @@ package com.sanjayrisbud.starzzboot.controllers;
 import com.sanjayrisbud.starzzboot.dtos.Message;
 import com.sanjayrisbud.starzzboot.dtos.StarDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.StarSummaryDto;
+import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.services.StarService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class StarController {
     public ResponseEntity<StarDetailsDto> getStar(@PathVariable Integer id) {
         var star = starService.getStar(id);
         if (star == null)
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Star", id);
 
         return ResponseEntity.ok().body(star);
     }

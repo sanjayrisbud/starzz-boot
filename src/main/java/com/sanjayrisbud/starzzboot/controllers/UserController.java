@@ -3,6 +3,7 @@ package com.sanjayrisbud.starzzboot.controllers;
 import com.sanjayrisbud.starzzboot.dtos.Message;
 import com.sanjayrisbud.starzzboot.dtos.UserDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.UserSummaryDto;
+import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.services.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class UserController {
     public ResponseEntity<UserDetailsDto> getUser(@PathVariable Integer id) {
         var user = userService.getUser(id);
         if (user == null)
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("User", id);
 
         return ResponseEntity.ok(user);
     }

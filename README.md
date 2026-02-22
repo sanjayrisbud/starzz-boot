@@ -403,6 +403,58 @@ builder pattern to create the details DTO one field at a time.
 
 The other classes in the `mappers` package follow a similar logic.
 
+Whenever our application processes requests, errors may occur, e.g. a request for a nonexistent
+constellation.  Instead of letting the application fail silently, we throw exceptions to convey
+information about these events.  We do this with exception handling.  In package
+`com.sanjayrisbud.starzzboot.dtos` we add a new class, `ErrorResponseDto`, to contain the
+error message:
+
+    ...
+    public record ErrorResponseDto(String message, LocalDateTime timestamp) {}
+
+We define it as a `record` to signify that instances of this class only contain data and are
+supposed to be immutable.  It has fields for the error message and the error's timestamp.
+
+In `com.sanjayrisbud.starzzboot`, we add a new package, `exceptions`, to contain the classes
+for our exception handling.  We create class `ResourceNotFoundException`:
+
+    ...
+    @Getter
+    public class ResourceNotFoundException extends RuntimeException {
+    
+        private final String resourceName;
+        private final Integer resourceId;
+    
+        public ResourceNotFoundException(String resourceName, Integer resourceId) {
+            super(resourceName + " with id " + resourceId + " not found.");
+            this.resourceName = resourceName;
+            this.resourceId = resourceId;
+        }
+    
+    }
+
+This will be the custom exception thrown whenever our application searches for nonexistent
+resources.
+
+In the same package, we create class `GlobalExceptionHandler`:
+
+    ...
+    @RestControllerAdvice
+    public class GlobalExceptionHandler {
+    
+        @ExceptionHandler(ResourceNotFoundException.class)
+        public ResponseEntity<ErrorResponseDto> handleNotFound(ResourceNotFoundException ex) {
+    
+            var error = new ErrorResponseDto(ex.getMessage(), LocalDateTime.now());
+    
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+    }
+
+The `@RestControllerAdvice` annotation makes this class handle all our custom exceptions.
+`@ExceptionHanler` specifies the method to handle specific exception classes.  In this case,
+`handleNotFound()` is the handler for `ResourceNotFoundException`.
+
 We now introduce a service layer to contain our application's business logic.  Introducing a
 service layer ensures a clean separation of concerns; controllers can focus solely on HTTP
 request handling and not need to worry about the business rules.
