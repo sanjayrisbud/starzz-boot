@@ -2,7 +2,7 @@ spring:
   application:
     name: starzz-boot
   datasource:
-    url: jdbc:mysql://localhost:3306/starzz
+    url: jdbc:mysql://localhost:3309/starzz
     username: root
     password: root
   jpa:

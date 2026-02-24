@@ -2,6 +2,7 @@ package com.sanjayrisbud.starzzboot.services;
 
 import com.sanjayrisbud.starzzboot.dtos.GalaxyDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.GalaxySummaryDto;
+import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.mappers.GalaxyMapper;
 import com.sanjayrisbud.starzzboot.models.Galaxy;
 import com.sanjayrisbud.starzzboot.repositories.GalaxyRepository;
@@ -23,7 +24,8 @@ public class GalaxyService {
     }
 
     public Galaxy findById(Integer id) {
-        return galaxyRepository.findById(id).orElse(null);
+        return galaxyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Galaxy", id));
     }
 
     public GalaxyDetailsDto getGalaxy(Integer id) {
