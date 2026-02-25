@@ -160,6 +160,7 @@ Project dependencies added:
 
     Spring Data JPA
     MySQL Driver
+    Jakarta Bean Validation
 
 *The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to the
 format of requests used in this chapter.*
@@ -190,6 +191,15 @@ implementation, handles the actual SQL generation and persistence management.)
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+Since data that we add to the database comes from user input in the requests, we would
+need to validate them before modifying the database.  We add **Jakarta Bean Validation** to 
+implement request validation:
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
 We add the snippets above to `pom.xml`.
@@ -356,6 +366,21 @@ Since details DTOs have more fields than summary DTOs, we create objects using `
 Although class instances only carry data, we cannot define the class as a `record` because we
 build instances one field at a time.
 
+We also have a DTO to accept input when processing requests to add or update constellations:
+
+    @Data
+    public class ConstellationDto {
+        @NotBlank private String constellationName;
+        @NotNull private Integer galaxyId;
+        @NotNull private Integer adderId;
+        private Integer verifierId;
+    }
+
+We add validation annotations to the fields.  `@NotNull` specifies that the field must be present
+and cannot be set to `null`.  `@NotBlank` specifies that the field must be present and cannot be
+`null`, blank, or an empty string.
+
+
 The other classes in the `dtos` package follow a similar logic.
 
 We would then need classes to map entities to DTOs.  The **MapStruct** dependency can help
@@ -445,15 +470,17 @@ In the same package, we create class `GlobalExceptionHandler`:
         @ExceptionHandler(ResourceNotFoundException.class)
         public ResponseEntity<ErrorResponseDto> handleNotFound(ResourceNotFoundException ex) {
     
-            var error = new ErrorResponseDto(ex.getMessage(), LocalDateTime.now());
+            var errorResponse = new ErrorResponseDto(ex.getMessage(), LocalDateTime.now());
     
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
     }
+    ...
 
 The `@RestControllerAdvice` annotation makes this class handle all our custom exceptions.
 `@ExceptionHanler` specifies the method to handle specific exception classes.  In this case,
-`handleNotFound()` is the handler for `ResourceNotFoundException`.
+`handleNotFound()` is the handler for `ResourceNotFoundException`.  There are also handlers
+for validation exceptions thrown by Spring Boot.
 
 We now introduce a service layer to contain our application's business logic.  Introducing a
 service layer ensures a clean separation of concerns; controllers can focus solely on HTTP

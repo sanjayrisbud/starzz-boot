@@ -5,6 +5,7 @@ import com.sanjayrisbud.starzzboot.dtos.ConstellationDto;
 import com.sanjayrisbud.starzzboot.dtos.ConstellationSummaryDto;
 import com.sanjayrisbud.starzzboot.dtos.Message;
 import com.sanjayrisbud.starzzboot.services.ConstellationService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class ConstellationController {
 
     @PostMapping
     public ResponseEntity<ConstellationDetailsDto> registerConstellation(
-            @RequestBody ConstellationDto request,
+            @Valid @RequestBody ConstellationDto request,
             UriComponentsBuilder uriComponentsBuilder) {
         var newConstellation = constellationService.registerConstellation(request);
         var uri = uriComponentsBuilder.path("/constellations/{id}")
@@ -40,8 +41,11 @@ public class ConstellationController {
     }
 
     @PutMapping("/{id}")
-    public Message updateConstellation(@PathVariable Long id, @RequestBody Message request) {
-        return new Message("Successfully called updateConstellation(" + id + ", " + request + ")");
+    public ResponseEntity<ConstellationDetailsDto> updateConstellation(
+            @PathVariable Integer id,
+            @Valid @RequestBody ConstellationDto request) {
+        var existingConstellation = constellationService.updateConstellation(id, request);
+        return ResponseEntity.ok(existingConstellation);
     }
 
     @DeleteMapping("/{id}")

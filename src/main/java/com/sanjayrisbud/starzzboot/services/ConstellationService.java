@@ -37,21 +37,43 @@ public class ConstellationService {
     }
 
     public ConstellationDetailsDto registerConstellation(ConstellationDto request) {
-        var galaxy = galaxyService.findById(request.getGalaxyId());
-        var addedBy = userService.findById(request.getAdderId());
+        var constellation = Constellation.builder()
+                .name(request.getConstellationName())
+                .galaxy(galaxyService.findById(request.getGalaxyId()))
+                .addedBy(userService.findById(request.getAdderId()))
+                .verifiedBy(getVerifiedBy(request))
+                .build();
 
+        constellationRepository.save(constellation);
+        return constellationMapper.toDetailsDto(constellation);
+    }
+
+    public ConstellationDetailsDto updateConstellation(Integer id, ConstellationDto request) {
+        var currentConstellation = findById(id);
+
+        if (!currentConstellation.getName().equals(request.getConstellationName()))
+            currentConstellation.setName(request.getConstellationName());
+
+        if (!currentConstellation.getGalaxy().getId().equals(request.getGalaxyId()))
+            currentConstellation.setGalaxy(galaxyService.findById(request.getGalaxyId()));
+
+        if (!currentConstellation.getAddedBy().getId().equals(request.getAdderId()))
+            currentConstellation.setAddedBy(userService.findById(request.getAdderId()));
+
+        var verifier = currentConstellation.getVerifiedBy();
+        if (verifier == null || !verifier.getId().equals(request.getVerifierId())) {
+            currentConstellation.setVerifiedBy(getVerifiedBy(request));
+        }
+
+        constellationRepository.save(currentConstellation);
+        return constellationMapper.toDetailsDto(currentConstellation);
+    }
+
+    private User getVerifiedBy(ConstellationDto request) {
         User verifiedBy = null;
         var verifierId = request.getVerifierId();
         if (verifierId != null)
             verifiedBy = userService.findById(request.getVerifierId());
-
-        var constellation = Constellation.builder()
-                .name(request.getConstellationName())
-                .galaxy(galaxy)
-                .addedBy(addedBy)
-                .verifiedBy(verifiedBy)
-                .build();
-        constellationRepository.save(constellation);
-        return constellationMapper.toDetailsDto(constellation);
+        return verifiedBy;
     }
 }
