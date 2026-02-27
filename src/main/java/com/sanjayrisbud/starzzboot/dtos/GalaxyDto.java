@@ -1,15 +1,17 @@
 package com.sanjayrisbud.starzzboot.dtos;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class GalaxyDto {
-    private String galaxyName;
-    private String galaxyType;
-    private Integer distanceMly;
-    private Integer redshift;
-    private Integer massSolar;
-    private Integer diameterLy;
-    private Integer adderId;
+    @NotBlank private String galaxyName;
+    @NotBlank private String galaxyType;
+    @NotNull private Integer distanceMly;
+    @NotNull private Integer redshift;
+    @NotNull private Integer massSolar;
+    @NotNull private Integer diameterLy;
+    @NotNull private Integer adderId;
     private Integer verifierId;
 }

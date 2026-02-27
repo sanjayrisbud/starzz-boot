@@ -34,6 +34,6 @@ public class Constellation {
     @JoinColumn(name = "verified_by")
     private User verifiedBy;
 
-    @OneToMany(targetEntity = Star.class, mappedBy = "constellation")
+    @OneToMany(targetEntity = Star.class, mappedBy = "constellation", cascade = CascadeType.REMOVE)
     private Set<Star> stars = new HashSet<>();
 }

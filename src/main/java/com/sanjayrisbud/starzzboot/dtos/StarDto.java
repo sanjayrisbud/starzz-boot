@@ -1,16 +1,18 @@
 package com.sanjayrisbud.starzzboot.dtos;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class StarDto {
-    private String starName;
-    private String starType;
-    private Integer constellationId;
-    private Integer rightAscension;
-    private Integer declination;
-    private Integer apparentMagnitude;
-    private String spectralType;
-    private Integer adderId;
+    @NotBlank private String starName;
+    @NotBlank private String starType;
+    @NotNull private Integer constellationId;
+    @NotNull private Integer rightAscension;
+    @NotNull private Integer declination;
+    @NotNull private Integer apparentMagnitude;
+    @NotNull private String spectralType;
+    @NotNull private Integer adderId;
     private Integer verifierId;
 }

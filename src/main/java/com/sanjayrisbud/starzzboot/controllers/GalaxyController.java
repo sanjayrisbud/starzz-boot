@@ -1,13 +1,16 @@
 package com.sanjayrisbud.starzzboot.controllers;
 
 import com.sanjayrisbud.starzzboot.dtos.GalaxyDetailsDto;
+import com.sanjayrisbud.starzzboot.dtos.GalaxyDto;
 import com.sanjayrisbud.starzzboot.dtos.GalaxySummaryDto;
 import com.sanjayrisbud.starzzboot.dtos.Message;
 import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.services.GalaxyService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
@@ -32,18 +35,27 @@ public class GalaxyController {
     }
 
     @PostMapping
-    public Message registerGalaxy(@RequestBody Message request) {
-        return new Message("Successfully called registerGalaxy(" + request + ")");
+    public ResponseEntity<GalaxyDetailsDto> registerGalaxy(
+            @Valid @RequestBody GalaxyDto request,
+            UriComponentsBuilder uriBuilder) {
+        var newGalaxy = galaxyService.registerGalaxy(request);
+        var uri = uriBuilder.path("/galaxies/{id}")
+                .buildAndExpand(newGalaxy.getGalaxyId()).toUri();
+        return ResponseEntity.created(uri).body(newGalaxy);
     }
 
     @PutMapping("/{id}")
-    public Message updateGalaxy(@PathVariable Long id, @RequestBody Message request) {
-        return new Message("Successfully called updateGalaxy(" + id + ", " + request + ")");
+    public ResponseEntity<GalaxyDetailsDto> updateGalaxy(
+            @PathVariable Integer id,
+            @Valid @RequestBody GalaxyDto request) {
+        var existingGalaxy = galaxyService.updateGalaxy(id, request);
+        return ResponseEntity.ok(existingGalaxy);
     }
 
     @DeleteMapping("/{id}")
-    public Message deleteGalaxy(@PathVariable Long id) {
-        return new Message("Successfully called deleteGalaxy(" + id + ")");
+    public ResponseEntity<Void> deleteGalaxy(@PathVariable Integer id) {
+        galaxyService.deleteGalaxy(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

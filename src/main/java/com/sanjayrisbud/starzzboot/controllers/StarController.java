@@ -2,12 +2,15 @@ package com.sanjayrisbud.starzzboot.controllers;
 
 import com.sanjayrisbud.starzzboot.dtos.Message;
 import com.sanjayrisbud.starzzboot.dtos.StarDetailsDto;
+import com.sanjayrisbud.starzzboot.dtos.StarDto;
 import com.sanjayrisbud.starzzboot.dtos.StarSummaryDto;
 import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.services.StarService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
@@ -32,18 +35,26 @@ public class StarController {
     }
 
     @PostMapping
-    public Message registerStar(@RequestBody Message request) {
-        return new Message("Successfully called registerStar(" + request + ")");
+    public ResponseEntity<StarDetailsDto> registerStar(
+            @Valid @RequestBody StarDto request,
+            UriComponentsBuilder uriBuilder) {
+        var newStar = starService.registerStar(request);
+        var uri = uriBuilder.path("/stars/{id}").buildAndExpand(newStar.getStarId()).toUri();
+        return ResponseEntity.created(uri).body(newStar);
     }
 
     @PutMapping("/{id}")
-    public Message updateStar(@PathVariable Long id, @RequestBody Message request) {
-        return new Message("Successfully called updateStar(" + id + ", " + request + ")");
+    public ResponseEntity<StarDetailsDto> updateStar(
+            @PathVariable Integer id,
+            @Valid @RequestBody StarDto request) {
+        var existingStar = starService.updateStar(id, request);
+        return ResponseEntity.ok().body(existingStar);
     }
 
     @DeleteMapping("/{id}")
-    public Message deleteStar(@PathVariable Long id) {
-        return new Message("Successfully called deleteStar(" + id + ")");
+    public ResponseEntity<Void> deleteStar(@PathVariable Integer id) {
+        starService.deleteStar(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

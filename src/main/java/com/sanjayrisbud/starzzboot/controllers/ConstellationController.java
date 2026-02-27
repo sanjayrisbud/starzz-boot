@@ -3,7 +3,6 @@ package com.sanjayrisbud.starzzboot.controllers;
 import com.sanjayrisbud.starzzboot.dtos.ConstellationDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.ConstellationDto;
 import com.sanjayrisbud.starzzboot.dtos.ConstellationSummaryDto;
-import com.sanjayrisbud.starzzboot.dtos.Message;
 import com.sanjayrisbud.starzzboot.services.ConstellationService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -18,7 +17,7 @@ import java.util.List;
 @RequestMapping("/constellations")
 public class ConstellationController {
 
-    private ConstellationService constellationService;
+    private final ConstellationService constellationService;
 
     @GetMapping
     public List<ConstellationSummaryDto> getConstellationList() {
@@ -33,9 +32,9 @@ public class ConstellationController {
     @PostMapping
     public ResponseEntity<ConstellationDetailsDto> registerConstellation(
             @Valid @RequestBody ConstellationDto request,
-            UriComponentsBuilder uriComponentsBuilder) {
+            UriComponentsBuilder uriBuilder) {
         var newConstellation = constellationService.registerConstellation(request);
-        var uri = uriComponentsBuilder.path("/constellations/{id}")
+        var uri = uriBuilder.path("/constellations/{id}")
                 .buildAndExpand(newConstellation.getConstellationId()).toUri();
         return ResponseEntity.created(uri).body(newConstellation);
     }
@@ -49,8 +48,9 @@ public class ConstellationController {
     }
 
     @DeleteMapping("/{id}")
-    public Message deleteConstellation(@PathVariable Long id) {
-        return new Message("Successfully called deleteConstellation(" + id + ")");
+    public ResponseEntity<Void> deleteConstellation(@PathVariable Integer id) {
+        constellationService.deleteConstellation(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

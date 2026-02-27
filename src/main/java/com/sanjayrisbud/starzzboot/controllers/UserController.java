@@ -1,13 +1,13 @@
 package com.sanjayrisbud.starzzboot.controllers;
 
-import com.sanjayrisbud.starzzboot.dtos.Message;
-import com.sanjayrisbud.starzzboot.dtos.UserDetailsDto;
-import com.sanjayrisbud.starzzboot.dtos.UserSummaryDto;
+import com.sanjayrisbud.starzzboot.dtos.*;
 import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.services.UserService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
@@ -32,18 +32,19 @@ public class UserController {
     }
 
     @PostMapping
-    public Message registerUser(@RequestBody Message request) {
-        return new Message("Successfully called registerUser(" + request + ")");
+    public ResponseEntity<UserDetailsDto> registerUser(
+            @Valid @RequestBody UserDto request,
+            UriComponentsBuilder uriBuilder) {
+        var newUser = userService.registerUser(request);
+        var uri = uriBuilder.path("/users/{id}").buildAndExpand(newUser.getUserId()).toUri();
+        return ResponseEntity.created(uri).body(newUser);
     }
 
     @PutMapping("/{id}")
-    public Message updateUser(@PathVariable Long id, @RequestBody Message request) {
-        return new Message("Successfully called updateUser(" + id + ", " + request + ")");
-    }
-
-    @DeleteMapping("/{id}")
-    public Message deleteUser(@PathVariable Long id) {
-        return new Message("Successfully called deleteUser(" + id + ")");
+    public ResponseEntity<UserDetailsDto> updateUser(
+            @PathVariable Integer id, @Valid @RequestBody UserDto request) {
+        var existingUser = userService.updateUser(id, request);
+        return ResponseEntity.ok(existingUser);
     }
 
 }

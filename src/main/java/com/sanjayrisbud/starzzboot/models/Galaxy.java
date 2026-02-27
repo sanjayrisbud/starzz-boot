@@ -1,10 +1,7 @@
 package com.sanjayrisbud.starzzboot.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,6 +9,7 @@ import java.util.Set;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Getter
 @Setter
 @Table(name = "galaxies")
@@ -47,6 +45,6 @@ public class Galaxy {
     @JoinColumn(name = "verified_by")
     private User verifiedBy;
 
-    @OneToMany(targetEntity = Constellation.class, mappedBy = "galaxy")
+    @OneToMany(targetEntity = Constellation.class, mappedBy = "galaxy", cascade = CascadeType.REMOVE)
     private Set<Constellation> constellations = new HashSet<>();
 }

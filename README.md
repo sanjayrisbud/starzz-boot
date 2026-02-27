@@ -19,7 +19,6 @@ the finding and verified it, respectively.
 The database was created in MySQL.  The scripts to create the tables and
 load the dummy data are included in `assets` for reference.  
 
-
 ## The Application
 
 This project was created in IntelliJ IDEA Ultimate.  It uses Java (OpenJDK), Maven and Spring Boot.
@@ -47,6 +46,10 @@ Project dependencies added:
     Lombok
 
 *A Postman collection for all routes is included in* `assets/starzz-boot.postman_collection.json`
+
+<details>
+
+<summary>Chapter Walkthrough</summary>
 
 A Spring Boot application follows the MVC pattern for web applications.  So to build our application,
 we add the **Spring Web** dependency in `pom.xml`. When we add a dependency in `pom.xml`, Maven
@@ -87,8 +90,8 @@ application.  The `@SpringBootApplication` annotation enables component scanning
 Spring to discover and register application components as **beans** within the application context.
 
 In Spring, a bean is an object whose lifecycle is managed by the Spring container. Classes
-annotated with `@RestController`, `@Service`, or `@Component` are automatically detected
-as beans and can be injected where needed.
+annotated with `@RestController`, `@Service`, or `@Component` are automatically detected as
+beans and can be injected where needed.
 
 We now define our application's endpoints.  First we define a class to hold plain responses to
 requests to our API endpoints.  In package `com.sanjayrisbud.starzzboot` we add a new package,
@@ -101,22 +104,19 @@ requests to our API endpoints.  In package `com.sanjayrisbud.starzzboot` we add 
         private String text;
     }
 
-(We annotate the class with `@AllArgsConstructor`, `@Getter` and `@ToString` so Lombok will
-generate a constructor, getter and toString() method for us.)
+We annotate the class with `@AllArgsConstructor`, `@Getter` and `@ToString` so Lombok will
+generate a constructor, getter and toString() method for us.
 
 When an instance of this class is returned as a response to an HTTP request, Spring Boot takes
 care of serializing the instance to JSON.  When an instance of the class is expected as a
 parameter to a method, Spring Boot takes care of deserializing the supplied JSON argument to the
 needed instance.
 
-We now define classes that would handle HTTP requests to our different API endpoints and 
+We now define classes that would handle HTTP requests to our different API endpoints and
 respond accordingly.  In package `com.sanjayrisbud.starzzboot` we add a new package,
 `controllers`.  This package will contain the classes that will handle the requests.
 
-A sample class in the `controllers` package is `ConstellationController`.  We annotate the
-class with `@RestController`, which marks the class as a controller where every method returns
-a domain object instead of an HTML view.  The `@RequestMapping` annotation specifies the prefix
-of the endpoints that the class handles, in this case, `/constellations` endpoints:
+A sample class in the `controllers` package is `ConstellationController`:
 
     ...
     @RestController
@@ -138,6 +138,10 @@ of the endpoints that the class handles, in this case, `/constellations` endpoin
         }
     ...
 
+We annotate the class with `@RestController`, which marks the class as a controller where every
+method returns a domain object instead of an HTML view.  The `@RequestMapping` annotation
+specifies the prefix of the endpoints that the class handles, in this case, `/constellations`.
+
 The mapping annotations (`@GetMapping`, `@PostMapping`, `@PutMapping` and `@DeleteMapping`)
 specify the HTTP verb (*GET, POST, PUT* or *DELETE*) that the class method handles.  The
 remainder of the handled URL, i.e. after the prefix, is passed as an argument to the annotation.
@@ -154,6 +158,8 @@ routing layer works correctly, real-world applications persist and retrieve data
 In the next chapter, we introduce the persistence layer using Spring Data JPA and connect our
 application to a MySQL database.
 
+</details>
+
 ### Chapter 2: Setting up the database
 
 Project dependencies added:
@@ -164,6 +170,10 @@ Project dependencies added:
 
 *The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to the
 format of requests used in this chapter.*
+
+<details>
+
+<summary>Chapter Walkthrough</summary>
 
 #### The Persistence Layer
 
@@ -194,7 +204,7 @@ implementation, handles the actual SQL generation and persistence management.)
         </dependency>
 
 Since data that we add to the database comes from user input in the requests, we would
-need to validate them before modifying the database.  We add **Jakarta Bean Validation** to 
+need to validate them before modifying the database.  We add **Jakarta Bean Validation** to
 implement request validation:
 
         <dependency>
@@ -206,9 +216,9 @@ We add the snippets above to `pom.xml`.
 
 With dependencies added, we now configure our data source so Spring Boot can connect to the MySQL
 database.  In `application.yaml` we add the application's data source:
-    
+
     datasource:
-        url: jdbc:mysql://localhost:3306/starzz
+        url: jdbc:mysql://localhost:3309/starzz
         username: root
         password: root
     jpa:
@@ -269,19 +279,21 @@ Our entity for the `galaxies` table is `Galaxy`; we define a field `galaxy` to r
 this field uses a foreign key to refer to the parent `Galaxy` we annotate the field with
 `@JoinColumn` to specify the foreign key.  `@ManyToOne` specifies the relationship.  For these
 types of relationships, the default behavior of Spring Data JPA when it loads a particular entity
-into memory is to automatically fetch the related entity.  This is called eager loading.  In our 
+into memory is to automatically fetch the related entity.  This is called eager loading.  In our
 case, we indicate `fetch` to override this default and tell Spring Data JPA to fetch the related
 entity only when we explicitly ask for it, which is called lazy loading.
 
 In addition, this field has a symmetric field in the entity `Galaxy`:
 
-    @OneToMany(targetEntity = Constellation.class, mappedBy = "galaxy")
+    @OneToMany(targetEntity = Constellation.class, mappedBy = "galaxy", cascade = CascadeType.REMOVE)
     private Set<Constellation> constellations = new HashSet<>();
 
 This field does not correspond to a physical column in the `galaxies` table; it represents the
 inverse side of the relationship.  It is a field for the set of its children `Constellation`
 objects.  `@OneToMany` specifies  the relationship, `targetEntity` indicates the related entity,
-and `mappedBy` indicates the symmetric field.
+and `mappedBy` indicates the symmetric field.  `cascade` specifies what operations on the parent
+cascade to the children entities; in this case, deleting a galaxy also deletes its children
+constellations.
 
 Two other fields in `Constellation` are defined similarly:
 
@@ -306,12 +318,12 @@ The symmetric fields in the `User` entity corresponding to the table `users`:
 The other classes in the `models` package follow a similar logic.
 
 Now that we have defined our entities as object-oriented representations of database tables,
-we introduce the repository layer.  While entities abstract the structure of our tables, 
+we introduce the repository layer.  While entities abstract the structure of our tables,
 repositories abstract the operations performed on those entities. They provide a clean interface
 for querying, saving, updating, and deleting data without requiring us to write SQL manually.
 
 Our repositories extend the interface `JpaRepository`. Spring Data JPA automatically generates
-implementations of these interface at runtime and registers them as beans in the application
+implementations of these interfaces at runtime and registers them as beans in the application
 context. This allows the repositories to be injected into services or controllers where needed.
 
 In `com.sanjayrisbud.starzzboot`, we add a new package, `repositories`, to contain the repositories.
@@ -379,7 +391,6 @@ We also have a DTO to accept input when processing requests to add or update con
 We add validation annotations to the fields.  `@NotNull` specifies that the field must be present
 and cannot be set to `null`.  `@NotBlank` specifies that the field must be present and cannot be
 `null`, blank, or an empty string.
-
 
 The other classes in the `dtos` package follow a similar logic.
 
@@ -489,3 +500,92 @@ request handling and not need to worry about the business rules.
 In `com.sanjayrisbud.starzzboot`, we add a new package, `services`, to contain the classes for our
 service layer.  An example class is `ConstellationService`:
 
+    ...
+    @AllArgsConstructor
+    @Service
+    public class ConstellationService {
+        private final ConstellationRepository constellationRepository;
+        private final ConstellationMapper constellationMapper;
+        private final GalaxyService galaxyService;
+        private final UserService userService;
+        
+        public List<ConstellationSummaryDto> getConstellationList() {
+            return constellationRepository.findAll().stream()
+                    .map(constellationMapper::toSummaryDto)
+                    .toList();
+        }
+    
+        public ConstellationDetailsDto getConstellation(Integer id) {
+            return constellationMapper.toDetailsDto(findById(id));
+        }
+    
+        public ConstellationDetailsDto registerConstellation(ConstellationDto request) {
+            var constellation = Constellation.builder()
+                    .name(request.getConstellationName())
+                    .galaxy(galaxyService.getEntity(request.getGalaxyId(), null))
+                    .addedBy(userService.getEntity(request.getAdderId(), null))
+                    .verifiedBy(userService.getEntity(request.getVerifierId(),null))
+                    .build();
+    
+            constellationRepository.save(constellation);
+            return constellationMapper.toDetailsDto(constellation);
+        }
+    ...
+
+`@Service` specifies that this class is a bean.  It has private fields for beans, which were
+automatically injected by Spring.  We then define methods to implement CRUD operations.
+
+The other classes in the `services` package follow a similar logic.
+
+Finally, we rewrite our `ConstellationController`:
+
+    ...
+    @AllArgsConstructor
+    @RestController
+    @RequestMapping("/constellations")
+    public class ConstellationController {
+    
+        private final ConstellationService constellationService;
+    
+        @GetMapping
+        public List<ConstellationSummaryDto> getConstellationList() {
+            return constellationService.getConstellationList();
+        }
+    
+        @GetMapping("/{id}")
+        public ResponseEntity<ConstellationDetailsDto> getConstellation(@PathVariable Integer id) {
+            return ResponseEntity.ok(constellationService.getConstellation(id));
+        }
+    
+        @PostMapping
+        public ResponseEntity<ConstellationDetailsDto> registerConstellation(
+                @Valid @RequestBody ConstellationDto request,
+                UriComponentsBuilder uriComponentsBuilder) {
+            var newConstellation = constellationService.registerConstellation(request);
+            var uri = uriComponentsBuilder.path("/constellations/{id}")
+                    .buildAndExpand(newConstellation.getConstellationId()).toUri();
+            return ResponseEntity.created(uri).body(newConstellation);
+        }
+    ...
+
+We introduce a private field for the service bean.  When the endpoint handlers receive requests,
+they now redirect those requests to different methods in the service bean, and then generate
+appropriate responses based on the results of those methods.  Instead of returning DTOs directly,
+the controller methods now return a `ResponseEntity<T>`, a generic wrapper that allows us to
+specify the HTTP status code and response body.
+
+The other classes in the `controllers` package follow a similar logic.
+
+*A Note on User Deletion*
+
+The application **does not** provide a *DELETE* endpoint for users.  This is a deliberate
+design decision:
+
+- Users are referenced by galaxies, constellations, and stars (`addedBy` and `verifiedBy`).
+- Cascading delete through these relationships would risk data loss and long transactional operations.
+- The existing database schema cannot be modified to add a soft-delete flag (`isActive`), so soft deletion is not possible.
+- Therefore, user deletion is intentionally disabled to preserve historical data integrity.
+
+> This demonstrates conscious consideration of domain rules and data integrity, rather than an oversight.
+
+</details>
