@@ -70,28 +70,28 @@ sequenceDiagram
 
 #### Endpoints
 
-| Endpoint                | Method | Description                                              | Response
-| ----------------------- | ------ | -------------------------------------------------------- | ---------
-| `/constellations`       | GET    | Returns *Successfully called getConstellationList()*     | 200 OK
-| `/constellations/{id}`  | GET    | Returns *Successfully called getConstellation(id)*       | 200 OK
-| `/constellations`       | POST   | Returns *Successfully called registerConstellation()*    | 200 OK
-| `/constellations/{id}`  | PUT    | Returns *Successfully called updateConstellation(id)*    | 200 OK
-| `/constellations/{id}`  | DELETE | Returns *Successfully called deleteConstellation(id)*    | 200 OK
-| `/galaxies`             | GET    | Returns *Successfully called getGalaxyList()*            | 200 OK
-| `/galaxies/{id}`        | GET    | Returns *Successfully called getGalaxy(id)*              | 200 OK
-| `/galaxies`             | POST   | Returns *Successfully called registerGalaxy()*           | 200 OK
-| `/galaxies/{id}`        | PUT    | Returns *Successfully called updateGalaxy(id)*           | 200 OK
-| `/galaxies/{id}`        | DELETE | Returns *Successfully called deleteGalaxy(id)*           | 200 OK
-| `/stars`                | GET    | Returns *Successfully called getStarList()*              | 200 OK
-| `/stars/{id}`           | GET    | Returns *Successfully called getStar(id)*                | 200 OK
-| `/stars`                | POST   | Returns *Successfully called registerStar()*             | 200 OK
-| `/stars/{id}`           | PUT    | Returns *Successfully called updateStar(id)*             | 200 OK
-| `/stars/{id}`           | DELETE | Returns *Successfully called deleteStar(id)*             | 200 OK
-| `/users`                | GET    | Returns *Successfully called getUserList()*              | 200 OK
-| `/users/{id}`           | GET    | Returns *Successfully called getUser(id)*                | 200 OK
-| `/users`                | POST   | Returns *Successfully called registerUser()*             | 200 OK
-| `/users/{id}`           | PUT    | Returns *Successfully called updateUser(id)*             | 200 OK
-| `/users/{id}`           | DELETE | Returns *Successfully called deleteUser(id)*             | 200 OK
+| Endpoint                | Method | Description                                              | Response |
+| ----------------------- | ------ | -------------------------------------------------------- | ---------|
+| `/constellations`       | GET    | Returns *Successfully called getConstellationList()*     | 200 OK   |
+| `/constellations/{id}`  | GET    | Returns *Successfully called getConstellation(id)*       | 200 OK   |
+| `/constellations`       | POST   | Returns *Successfully called registerConstellation()*    | 200 OK   |
+| `/constellations/{id}`  | PUT    | Returns *Successfully called updateConstellation(id)*    | 200 OK   |
+| `/constellations/{id}`  | DELETE | Returns *Successfully called deleteConstellation(id)*    | 200 OK   |
+| `/galaxies`             | GET    | Returns *Successfully called getGalaxyList()*            | 200 OK   |
+| `/galaxies/{id}`        | GET    | Returns *Successfully called getGalaxy(id)*              | 200 OK   |
+| `/galaxies`             | POST   | Returns *Successfully called registerGalaxy()*           | 200 OK   |
+| `/galaxies/{id}`        | PUT    | Returns *Successfully called updateGalaxy(id)*           | 200 OK   |
+| `/galaxies/{id}`        | DELETE | Returns *Successfully called deleteGalaxy(id)*           | 200 OK   |
+| `/stars`                | GET    | Returns *Successfully called getStarList()*              | 200 OK   |
+| `/stars/{id}`           | GET    | Returns *Successfully called getStar(id)*                | 200 OK   |
+| `/stars`                | POST   | Returns *Successfully called registerStar()*             | 200 OK   |
+| `/stars/{id}`           | PUT    | Returns *Successfully called updateStar(id)*             | 200 OK   |
+| `/stars/{id}`           | DELETE | Returns *Successfully called deleteStar(id)*             | 200 OK   |
+| `/users`                | GET    | Returns *Successfully called getUserList()*              | 200 OK   |
+| `/users/{id}`           | GET    | Returns *Successfully called getUser(id)*                | 200 OK   |
+| `/users`                | POST   | Returns *Successfully called registerUser()*             | 200 OK   |
+| `/users/{id}`           | PUT    | Returns *Successfully called updateUser(id)*             | 200 OK   |
+| `/users/{id}`           | DELETE | Returns *Successfully called deleteUser(id)*             | 200 OK   |
 
 *A Postman collection for all routes is included in* `assets/starzz-boot.postman_collection.json`
 
@@ -318,27 +318,27 @@ sequenceDiagram
 
 #### Updated Endpoints
 
-| Endpoint                | Method | Description                                              | Response
-| ----------------------- | ------ | -------------------------------------------------------- | ---------
-| `/constellations`       | GET    | Returns the list of constellations                       | 200 OK
-| `/constellations/{id}`  | GET    | Returns the constellation with the ID of *id*            | 200 OK
-| `/constellations`       | POST   | Creates a new constellation record                       | 201 Created
-| `/constellations/{id}`  | PUT    | Updates the constellation with the ID of *id*            | 200 OK
-| `/constellations/{id}`  | DELETE | Deletes the constellation with the ID of *id*            | 204 No Content
-| `/galaxies`             | GET    | Returns the list of galaxies                             | 200 OK
-| `/galaxies/{id}`        | GET    | Returns the galaxy with the ID of *id*                   | 200 OK
-| `/galaxies`             | POST   | Creates a new galaxy record                              | 201 Created
-| `/galaxies/{id}`        | PUT    | Updates the galaxy with the ID of *id*                   | 200 OK
-| `/galaxies/{id}`        | DELETE | Deletes the galaxy with the ID of *id*                   | 204 No Content
-| `/stars`                | GET    | Returns the list of stars                                | 200 OK
-| `/stars/{id}`           | GET    | Returns the star with the ID of *id*                     | 200 OK
-| `/stars`                | POST   | Creates a new star record                                | 201 Created
-| `/stars/{id}`           | PUT    | Updates the star with the ID of *id*                     | 200 OK
-| `/stars/{id}`           | DELETE | Deletes the star with the ID of *id*                     | 204 No Content
-| `/users`                | GET    | Returns the list of users                                | 200 OK
-| `/users/{id}`           | GET    | Returns the user with the ID of *id*                     | 200 OK
-| `/users`                | POST   | Creates a new user record                                | 201 Created
-| `/users/{id}`           | PUT    | Updates the user with the ID of *id*                     | 200 OK
+| Endpoint                | Method | Description                                              | Response       |
+| ----------------------- | ------ | -------------------------------------------------------- | ---------------|
+| `/constellations`       | GET    | Returns the list of constellations                       | 200 OK         |
+| `/constellations/{id}`  | GET    | Returns the constellation with the ID of *id*            | 200 OK         |
+| `/constellations`       | POST   | Creates a new constellation record                       | 201 Created    |
+| `/constellations/{id}`  | PUT    | Updates the constellation with the ID of *id*            | 200 OK         |
+| `/constellations/{id}`  | DELETE | Deletes the constellation with the ID of *id*            | 204 No Content |
+| `/galaxies`             | GET    | Returns the list of galaxies                             | 200 OK         |
+| `/galaxies/{id}`        | GET    | Returns the galaxy with the ID of *id*                   | 200 OK         |
+| `/galaxies`             | POST   | Creates a new galaxy record                              | 201 Created    |
+| `/galaxies/{id}`        | PUT    | Updates the galaxy with the ID of *id*                   | 200 OK         |
+| `/galaxies/{id}`        | DELETE | Deletes the galaxy with the ID of *id*                   | 204 No Content |
+| `/stars`                | GET    | Returns the list of stars                                | 200 OK         |
+| `/stars/{id}`           | GET    | Returns the star with the ID of *id*                     | 200 OK         |
+| `/stars`                | POST   | Creates a new star record                                | 201 Created    |
+| `/stars/{id}`           | PUT    | Updates the star with the ID of *id*                     | 200 OK         |
+| `/stars/{id}`           | DELETE | Deletes the star with the ID of *id*                     | 204 No Content |
+| `/users`                | GET    | Returns the list of users                                | 200 OK         |
+| `/users/{id}`           | GET    | Returns the user with the ID of *id*                     | 200 OK         |
+| `/users`                | POST   | Creates a new user record                                | 201 Created    |
+| `/users/{id}`           | PUT    | Updates the user with the ID of *id*                     | 200 OK         |
 
 *The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to the
 format of requests used in this chapter.*
