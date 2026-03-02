@@ -3,7 +3,6 @@ package com.sanjayrisbud.starzzboot.controllers;
 import com.sanjayrisbud.starzzboot.dtos.GalaxyDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.GalaxyDto;
 import com.sanjayrisbud.starzzboot.dtos.GalaxySummaryDto;
-import com.sanjayrisbud.starzzboot.dtos.Message;
 import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.services.GalaxyService;
 import jakarta.validation.Valid;

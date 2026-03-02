@@ -46,13 +46,13 @@ public class UserService {
 
         if (!currentUser.getName().equals(request.getUsername()))
             currentUser.setName(request.getUsername());
-        if (!currentUser.getEmail().equals(request.getEmail()))
+        if (currentUser.getEmail() == null || !currentUser.getEmail().equals(request.getEmail()))
             currentUser.setEmail(request.getEmail());
-        if (!currentUser.getFirstName().equals(request.getFirstName()))
+        if (currentUser.getFirstName() == null || !currentUser.getFirstName().equals(request.getFirstName()))
             currentUser.setFirstName(request.getFirstName());
-        if (!currentUser.getLastName().equals(request.getLastName()))
+        if (currentUser.getLastName() == null || !currentUser.getLastName().equals(request.getLastName()))
             currentUser.setLastName(request.getLastName());
-        if (!currentUser.getDateOfBirth().equals(request.getDateOfBirth()))
+        if (currentUser.getDateOfBirth() == null || !currentUser.getDateOfBirth().equals(request.getDateOfBirth()))
             currentUser.setDateOfBirth(request.getDateOfBirth());
 
         userRepository.save(currentUser);
