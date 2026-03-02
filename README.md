@@ -1,10 +1,17 @@
 # starzz-boot
 
-This is a REST API backend created using Java's Spring Boot framework.
+This is a REST API backend created using Java's Spring Boot framework.  It demonstrates a full-stack backend design using MVC architecture, layered services, DTO mapping, validation, exception handling, and database integration with MySQL.
+
+This project serves two purposes:
+
+**Portfolio showcase**: A clear example of building a maintainable, production-ready Spring Boot API.
+
+**Learning resource**: A guided walkthrough for developers familiar with Spring Boot, showing why each layer exists and how the components interact.
+
+The API manages a database of fictional galaxies, constellations, and stars. You’ll see how entities, DTOs, mappers, services, and controllers work together to process requests and return structured responses.
+Mermaid diagrams illustrate request flows, allowing readers to quickly grasp the architecture while detailed explanations provide deeper insight.
 
 ## The Dataset
-
-This project uses a database of fictional galaxies, constellations and stars.  
 
 Here is a diagram to describe the tables and their relationships:
 
@@ -44,6 +51,22 @@ Project dependencies added:
 
     Spring Web
     Lombok
+
+#### Overview
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User
+    participant DispatcherServlet
+    participant Controller
+
+    User ->> DispatcherServlet: HTTP Request
+    DispatcherServlet ->> Controller: HTTP Request
+    Controller -->> DispatcherServlet: 200 OK
+    DispatcherServlet -->> User: HTTP Response
+ ```
 
 #### Endpoints
 
@@ -192,6 +215,106 @@ Project dependencies added:
     Spring Data JPA
     MySQL Driver
     Jakarta Bean Validation
+
+#### Overview
+
+##### HTTP GET
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User
+    participant DispatcherServlet
+    participant ExceptionHandler
+    participant Controller
+    participant Service
+    participant Repository
+    participant Database
+
+    User ->> DispatcherServlet: HTTP GET Request
+    DispatcherServlet ->> Controller: GET handler
+    Controller ->> Service: fetch data
+    Service ->> Repository: fetch data
+    Repository ->> Database: SQL query
+    Database -->> Repository: results
+    Repository -->> Service: entity
+    Service -->> Controller: DTO
+    Controller -->> DispatcherServlet: ResponseEntity<DTO>
+    DispatcherServlet -->> User: HTTP Response
+```
+
+##### HTTP POST/PUT
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User
+    participant DispatcherServlet
+    participant ExceptionHandler
+    participant Controller
+    participant Service
+    participant Repository
+    participant Database
+
+    User ->> DispatcherServlet: HTTP POST | HTTP PUT Request
+    DispatcherServlet ->> Controller: POST/PUT handler
+    alt validation failed
+        Controller -->> ExceptionHandler: validation exception
+        ExceptionHandler -->> DispatcherServlet: HTTP 400
+    end
+    Controller ->> Service: process request
+    Service ->> Repository: fetch related entities
+    Repository ->> Database: SQL query
+    Database -->> Repository: results
+    Repository -->> Service: entity
+    alt not found
+        Service -->> ExceptionHandler: not found exception
+        ExceptionHandler -->> DispatcherServlet: HTTP 404
+    end
+    Service ->> Repository: save and fetch data
+    Repository ->> Database: SQL query
+    Database -->> Repository: results
+    Repository -->> Service: entity
+    Service -->> Controller: DTO
+    Controller -->> DispatcherServlet: ResponseEntity<DTO>
+    DispatcherServlet -->> User: HTTP Response
+```
+
+##### HTTP DELETE
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User
+    participant DispatcherServlet
+    participant ExceptionHandler
+    participant Controller
+    participant Service
+    participant Repository
+    participant Database
+
+    User ->> DispatcherServlet: HTTP DELETE Request
+    DispatcherServlet ->> Controller: DELETE handler
+    Controller ->> Service: process request
+    Service ->> Repository: fetch entity
+    Repository ->> Database: SQL query
+    Database -->> Repository: results
+    Repository -->> Service: entity
+    alt not found
+        Service -->> ExceptionHandler: not found exception
+        ExceptionHandler -->> DispatcherServlet: HTTP 404
+    end
+    Service ->> Repository: delete data
+    Repository ->> Database: SQL query
+    Database -->> Repository: null
+    Repository -->> Service: confirmation
+    Service -->> Controller: Void
+    Controller -->> DispatcherServlet: ResponseEntity<Void>
+    DispatcherServlet -->> User: HTTP Response
+```
 
 #### Updated Endpoints
 
@@ -546,7 +669,7 @@ In the same package, we create class `GlobalExceptionHandler`:
     ...
 
 The `@RestControllerAdvice` annotation makes this class handle all our custom exceptions.
-`@ExceptionHanler` specifies the method to handle specific exception classes.  In this case,
+`@ExceptionHandler` specifies the method to handle specific exception classes.  In this case,
 `handleNotFound()` is the handler for `ResourceNotFoundException`.  There are also handlers
 for validation exceptions thrown by Spring Boot.
 
