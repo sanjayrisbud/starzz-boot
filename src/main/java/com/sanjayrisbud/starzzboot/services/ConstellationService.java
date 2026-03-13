@@ -72,7 +72,7 @@ public class ConstellationService {
 
     }
 
-    public Constellation findById(Integer id) {
+    private Constellation findById(Integer id) {
         return constellationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Constellation", id));
     }

@@ -28,7 +28,12 @@ load the dummy data are included in `assets` for reference.
 
 ## The Application
 
-This project was created in IntelliJ IDEA Ultimate.  It uses Java (OpenJDK), Maven and Spring Boot.
+This project was created in IntelliJ IDEA Ultimate.  It uses Java, Spring Boot, Maven and MySQL.
+
+![Java](https://img.shields.io/badge/java-17-blue)
+![Spring Boot](https://img.shields.io/badge/springboot-4.0.2-brightgreen)
+![Maven](https://img.shields.io/badge/maven-3.3.4-orange)
+![MySQL](https://img.shields.io/badge/mysql-9.6-purple)
 
 First we create a new Spring Boot project.  Instead of manual setup from [https://start.spring.io],
 we use IntelliJ:
@@ -71,7 +76,7 @@ sequenceDiagram
 #### Endpoints
 
 | Endpoint                | Method | Description                                              | Response |
-| ----------------------- | ------ | -------------------------------------------------------- | ---------|
+|-------------------------|--------|----------------------------------------------------------|----------|
 | `/constellations`       | GET    | Returns *Successfully called getConstellationList()*     | 200 OK   |
 | `/constellations/{id}`  | GET    | Returns *Successfully called getConstellation(id)*       | 200 OK   |
 | `/constellations`       | POST   | Returns *Successfully called registerConstellation()*    | 200 OK   |
@@ -119,6 +124,9 @@ We also add **Lombok** for automatic generation of getters, setters, constructor
     </dependency>
 
 (We add the scope because Lombok is only needed during compilation and shouldn't exist at runtime)
+
+For now, we will be referring to the `src/main/java` folder of our project.  We will talk about
+`src/test/java` later.
 
 One of the auto-generated files in our project is `StarzzBootApplication.java` in package
 `com.sanjayrisbud.starzzboot`:
@@ -319,7 +327,7 @@ sequenceDiagram
 #### Updated Endpoints
 
 | Endpoint                | Method | Description                                              | Response       |
-| ----------------------- | ------ | -------------------------------------------------------- | ---------------|
+|-------------------------|--------|----------------------------------------------------------|----------------|
 | `/constellations`       | GET    | Returns the list of constellations                       | 200 OK         |
 | `/constellations/{id}`  | GET    | Returns the constellation with the ID of *id*            | 200 OK         |
 | `/constellations`       | POST   | Creates a new constellation record                       | 201 Created    |
@@ -395,7 +403,7 @@ implement request validation:
 We add the snippets above to `pom.xml`.
 
 With dependencies added, we now configure our data source so Spring Boot can connect to the MySQL
-database.  In `application.yaml` we add the application's data source:
+database.  In `src/main/resources/application.yaml` we add the application's data source:
 
     datasource:
         url: jdbc:mysql://localhost:3309/starzz
@@ -553,12 +561,13 @@ Another example is `ConstellationDetailsDto`:
     }
 
 This DTO has additional fields to display the parent galaxy, and the adder and verifier.  These
-fields are themselves DTOs.  `@Data` tells Lombok to generate getters and setters for all fields.
-Since details DTOs have more fields than summary DTOs, we create objects using `@Builder`.
-Although class instances only carry data, we cannot define the class as a `record` because we
-build instances one field at a time.
+fields are themselves DTOs.  `@JsonPropertyOrder` specifies the order of the fields in the DTO
+serialization.  `@Data` tells Lombok to generate boilerplate code such as getters, setters, equals,
+hashCode, and toString.  Although the class only carries data, we define it as a regular class instead
+of a record because we construct instances using the builder pattern, which allows fields to be set
+more flexibly.  We specify this using `@Builder`.
 
-We also have a DTO to accept input when processing requests to add or update constellations:
+We also have a DTO to accept JSON input when processing requests to add or update constellations:
 
     @Data
     public class ConstellationDto {
@@ -570,7 +579,8 @@ We also have a DTO to accept input when processing requests to add or update con
 
 We add validation annotations to the fields.  `@NotNull` specifies that the field must be present
 and cannot be set to `null`.  `@NotBlank` specifies that the field must be present and cannot be
-`null`, blank, or an empty string.
+`null`, blank, or an empty string.  When all the validations pass, the JSON is deserialized to
+a DTO instance.
 
 The other classes in the `dtos` package follow a similar logic.
 
@@ -755,5 +765,122 @@ the controller methods now return a `ResponseEntity<T>`, a generic wrapper that 
 specify the HTTP status code and response body.
 
 The other classes in the `controllers` package follow a similar logic.
+
+Now that we’ve finished setting up the database and our controllers, our app is starting to grow.
+With more pieces working together, it’s easy to accidentally break something when we add new
+features. That’s why it’s a good idea to start writing **unit tests** now — they help us make
+sure each part works on its own and keep everything running smoothly as the project grows.
+
+In the next chapter, we’ll dive into **unit testing** using **JUnit 5** and **Mockito**.
+We’ll cover how to test our services and controllers, mock dependencies, and build a solid
+foundation so future updates won’t surprise us.
+
+</details>
+
+### Chapter 3: Setting up the unit tests
+
+Project dependencies added:
+
+    None
+
+<details>
+
+<summary>Chapter Walkthrough</summary>
+
+To test our application, we will use **JUnit 5** and **Mockito**. JUnit 5 provides the framework
+to write and run unit tests, while Mockito allows us to create mocks of our dependencies so we
+can test each layer in isolation. To use them in our project, we need the `spring-boot-starter-test`
+dependency.  However, we don’t need to manually add this dependency to our `pom.xml`.  When we
+created the project, the dependency had already been added to `pom.xml`:
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+(The scope specifies that the dependency is only needed during testing and won't be included when
+the application package is built.)
+
+Up until now, we have been writing all our source code in the `src/main/java` folder of our project:
+
+![Project Structure 1](assets/project_structure_1.png)
+
+We will be writing our tests in the `src/test/java` folder of our project, also added upon project
+creation:
+
+![Project Structure 2](assets/project_structure_2.png)
+
+This folder will have a similar package structure to `src/main/java`.  The testing class' name is
+the same as the name of the class being tested, with the suffix `Test`.
+
+We start with writing unit tests for our services.  In package `com.sanjayrisbud.starzzboot.services`
+we create class `ConstellationServiceTest` to contain our unit tests for `ConstellationService`:
+
+    ...
+    @ExtendWith(MockitoExtension.class)
+    class ConstellationServiceTest {
+        @Mock
+        private ConstellationRepository constellationRepository;
+        @Mock
+        private GalaxyService galaxyService;
+        @Mock
+        private UserService userService;
+        @InjectMocks
+        private ConstellationService constellationService;
+    
+        @Test
+        void getEntityGivenNewIdIsNullReturnsNull() {
+            Constellation c1 = constellationService.getEntity(null, null);
+            assertNull(c1);
+    
+            Constellation c2 = constellationService.getEntity(null,
+                    Constellation.builder().build());
+            assertNull(c2);
+        }
+    
+        @Test
+        void getEntityGivenNullCurrentConstellationReturnsConstellationFromRepository() {
+            Constellation existingConstellation = Constellation.builder().build();
+            when(constellationRepository.findById(1))
+                    .thenReturn(Optional.of(existingConstellation));
+    
+            Constellation c = constellationService.getEntity(1,null);
+    
+            assertEquals(existingConstellation, c);
+        }
+    ...
+
+To test `ConstellationService`, we create an instance of it.  Since it depends on other classes,
+we would also need instances of those dependencies.
+
+In unit tests, we mock dependencies so the class being tested runs in isolation.  Instead of
+calling real implementations like repositories or other services, mocks return predefined
+results.  This keeps tests fast, predictable, and focused only on the logic of the unit under
+test rather than external systems like databases.
+
+We use `@Mock` to create mock instances of `ConstellationRepository`, `GalaxyService` and
+`UserService`.  We then use `@InjectMocks` to inject these dependencies into our
+`ConstellationService` instance.  Finally, `@ExtendWith(MockitoExtension.class)` enables
+Mockito's functionality.
+
+`@Test` specifies that the method is a test.  Both methods above are tests for `getEntity()` in
+`ConstellationService`.  There are actually 5 tests for `getEntity()` alone.  Multiple tests for
+the same method are beneficial.  This ensures that the method is thoroughly tested.
+
+It is necessary to ensure that private methods behave correctly. In practice, however, private
+methods are not tested directly.  Instead, they are exercised through the public methods that
+use them. This allows tests to verify behavior without exposing internal implementation details.
+
+Notice also the `assertNull()` and `when()` methods.  They are static methods defined in the
+classes *Assertions* and *Mockito*, respectively.  For common testing helpers, we can statically
+import them:
+
+    import static org.junit.jupiter.api.Assertions.*;
+    import static org.mockito.Mockito.*;
+
+This allows us to call the static methods without having to prefix them with the class name.
+
+The other classes in the `services` package follow a similar logic.
 
 </details>
