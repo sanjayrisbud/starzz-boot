@@ -1,5 +1,10 @@
 # starzz-boot
 
+![Java](https://img.shields.io/badge/java-17-blue)
+![Spring Boot](https://img.shields.io/badge/springboot-4.0.2-brightgreen)
+![Maven](https://img.shields.io/badge/maven-3.3.4-orange)
+![MySQL](https://img.shields.io/badge/mysql-9.6-purple)
+
 This is a REST API backend created using Java's Spring Boot framework.  It demonstrates a full-stack backend design using MVC architecture, layered services, DTO mapping, validation, exception handling, and database integration with MySQL.
 
 This project serves two purposes:
@@ -10,6 +15,18 @@ This project serves two purposes:
 
 The API manages a database of fictional galaxies, constellations, and stars. You’ll see how entities, DTOs, mappers, services, and controllers work together to process requests and return structured responses.
 Mermaid diagrams illustrate request flows, allowing readers to quickly grasp the architecture while detailed explanations provide deeper insight.
+
+## Features
+
+- REST API built with Spring Boot
+- MVC architecture with layered services (Controller → Service → Repository)
+- DTO mapping between entities and responses
+- Validation using Jakarta Bean Validation
+- Global exception handling
+- MySQL database with Spring Data JPA
+- Unit testing using JUnit 5 and Mockito
+- Postman collection included
+- Architecture diagrams using Mermaid
 
 ## The Dataset
 
@@ -29,11 +46,6 @@ load the dummy data are included in `assets` for reference.
 ## The Application
 
 This project was created in IntelliJ IDEA Ultimate.  It uses Java, Spring Boot, Maven and MySQL.
-
-![Java](https://img.shields.io/badge/java-17-blue)
-![Spring Boot](https://img.shields.io/badge/springboot-4.0.2-brightgreen)
-![Maven](https://img.shields.io/badge/maven-3.3.4-orange)
-![MySQL](https://img.shields.io/badge/mysql-9.6-purple)
 
 First we create a new Spring Boot project.  Instead of manual setup from [https://start.spring.io],
 we use IntelliJ:
@@ -99,6 +111,10 @@ sequenceDiagram
 | `/users/{id}`           | DELETE | Returns *Successfully called deleteUser(id)*             | 200 OK   |
 
 *A Postman collection for all routes is included in* `assets/starzz-boot.postman_collection.json`
+
+#### Chapter Summary
+
+This chapter sets up the foundation of the Spring Boot application and demonstrates the basic routing and controller structure. It shows how requests flow from the DispatcherServlet to controllers and how endpoints are defined using the MVC pattern. Hardcoded responses are used to verify routing, providing a clear view of how controllers handle HTTP requests. By the end, the project has a working skeleton API that illustrates the architecture and request flow.
 
 <details>
 
@@ -359,11 +375,13 @@ This is a deliberate design decision:
 - The existing database schema cannot be modified to add a soft-delete flag (`isActive`), so soft deletion is not possible.
 - Therefore, user deletion is intentionally disabled to preserve historical data integrity.
 
+#### Chapter Summary
+
+This chapter introduces the persistence layer and connects the application to a MySQL database. Entities, JPA annotations, and relationships are defined, along with DTOs for clean data transfer. The repository and service layers are implemented to manage database interactions, and controllers are connected to services to handle requests and responses. Validation, exception handling, and structured response patterns are also included, making the API fully functional with proper separation of concerns.
+
 <details>
 
 <summary>Chapter Walkthrough</summary>
-
-#### The Persistence Layer
 
 To persist and retrieve data, we now introduce a persistence layer. In Spring Boot applications,
 this is typically achieved using Spring Data JPA on top of a relational database.  In our case,
@@ -465,9 +483,8 @@ using:
 
 Our entity for the `galaxies` table is `Galaxy`; we define a field `galaxy` to refer to it.  Since
 this field uses a foreign key to refer to the parent `Galaxy` we annotate the field with
-`@JoinColumn` to specify the foreign key.  `@ManyToOne` specifies the relationship.  For these
-types of relationships, the default behavior of Spring Data JPA when it loads a particular entity
-into memory is to automatically fetch the related entity.  This is called eager loading.  In our
+`@JoinColumn` to specify the foreign key.  `@ManyToOne` specifies the relationship i.e. many to one.
+For these types of relationships, the default behavior of Spring Data JPA when it loads a particular entity into memory is to automatically fetch the related entity.  This is called eager loading.  In our
 case, we indicate `fetch` to override this default and tell Spring Data JPA to fetch the related
 entity only when we explicitly ask for it, which is called lazy loading.
 
@@ -523,8 +540,6 @@ An example interface is`ConstellationRepository`:
 
 The other interfaces in the `repositories` package follow a similar logic.
 
-#### API Representation Layer
-
 Whenever we send data as part of responses, we usually don't send raw entities from our database.
 We create mappings from our entities to custom objects, and send those objects instead.  These
 custom objects are known as data transfer objects.  We need to create DTOs for our entities.
@@ -569,6 +584,7 @@ more flexibly.  We specify this using `@Builder`.
 
 We also have a DTO to accept JSON input when processing requests to add or update constellations:
 
+    @Builder
     @Data
     public class ConstellationDto {
         @NotBlank private String constellationName;
@@ -820,6 +836,12 @@ we create class `ConstellationServiceTest` to contain our unit tests for `Conste
     ...
     @ExtendWith(MockitoExtension.class)
     class ConstellationServiceTest {
+        private final UserMapper userMapper = new UserMapper();
+        private final GalaxyMapper galaxyMapper = new GalaxyMapper(userMapper);
+        @Spy
+        private final ConstellationMapper constellationMapper =
+                new ConstellationMapper(galaxyMapper, userMapper);
+
         @Mock
         private ConstellationRepository constellationRepository;
         @Mock
@@ -841,7 +863,7 @@ we create class `ConstellationServiceTest` to contain our unit tests for `Conste
     
         @Test
         void getEntityGivenNullCurrentConstellationReturnsConstellationFromRepository() {
-            Constellation existingConstellation = Constellation.builder().build();
+            var existingConstellation = Constellation.builder().build();
             when(constellationRepository.findById(1))
                     .thenReturn(Optional.of(existingConstellation));
     
@@ -860,17 +882,20 @@ results.  This keeps tests fast, predictable, and focused only on the logic of t
 test rather than external systems like databases.
 
 We use `@Mock` to create mock instances of `ConstellationRepository`, `GalaxyService` and
-`UserService`.  We then use `@InjectMocks` to inject these dependencies into our
-`ConstellationService` instance.  Finally, `@ExtendWith(MockitoExtension.class)` enables
-Mockito's functionality.
+`UserService`.  `ConstellationMapper` is a dependency, but since it only contains lightweight,
+deterministic mapping logic, we can use a real instance (annotated with `@Spy`) instead of
+mocking it. This keeps tests simple and readable.
+
+We then use `@InjectMocks` to inject these dependencies into our `ConstellationService`
+instance.  Finally, `@ExtendWith(MockitoExtension.class)` enables Mockito's functionality.
 
 `@Test` specifies that the method is a test.  Both methods above are tests for `getEntity()` in
 `ConstellationService`.  There are actually 5 tests for `getEntity()` alone.  Multiple tests for
 the same method are beneficial.  This ensures that the method is thoroughly tested.
 
-It is necessary to ensure that private methods behave correctly. In practice, however, private
-methods are not tested directly.  Instead, they are exercised through the public methods that
-use them. This allows tests to verify behavior without exposing internal implementation details.
+Private methods contain logic that affects the behavior of public methods.  We verify that logic
+indirectly by testing the public methods that use them, rather than testing private methods
+directly.  This allows tests to verify behavior without exposing internal implementation details.
 
 Notice also the `assertNull()` and `when()` methods.  They are static methods defined in the
 classes *Assertions* and *Mockito*, respectively.  For common testing helpers, we can statically
@@ -880,6 +905,7 @@ import them:
     import static org.mockito.Mockito.*;
 
 This allows us to call the static methods without having to prefix them with the class name.
+This is purely for readability.
 
 The other classes in the `services` package follow a similar logic.
 

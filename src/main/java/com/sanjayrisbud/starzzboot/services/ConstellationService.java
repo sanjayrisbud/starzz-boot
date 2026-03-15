@@ -43,7 +43,7 @@ public class ConstellationService {
     }
 
     public ConstellationDetailsDto updateConstellation(Integer id, ConstellationDto request) {
-        var currentConstellation = findById(id);
+        Constellation currentConstellation = findById(id);
 
         if (!currentConstellation.getName().equals(request.getConstellationName()))
             currentConstellation.setName(request.getConstellationName());
@@ -59,7 +59,7 @@ public class ConstellationService {
     }
 
     public void deleteConstellation(Integer id) {
-        var currentConstellation = findById(id);
+        Constellation currentConstellation = findById(id);
         constellationRepository.delete(currentConstellation);
     }
 
