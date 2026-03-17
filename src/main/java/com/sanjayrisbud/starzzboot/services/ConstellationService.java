@@ -45,8 +45,7 @@ public class ConstellationService {
     public ConstellationDetailsDto updateConstellation(Integer id, ConstellationDto request) {
         Constellation currentConstellation = findById(id);
 
-        if (!currentConstellation.getName().equals(request.getConstellationName()))
-            currentConstellation.setName(request.getConstellationName());
+        currentConstellation.setName(request.getConstellationName());
         currentConstellation.setGalaxy(galaxyService.getEntity(
                 request.getGalaxyId(), currentConstellation.getGalaxy()));
         currentConstellation.setAddedBy(userService.getEntity(

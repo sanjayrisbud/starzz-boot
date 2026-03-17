@@ -42,18 +42,13 @@ public class UserService {
     }
 
     public UserDetailsDto updateUser(Integer id, UserDto request) {
-        var currentUser = findById(id);
+        User currentUser = findById(id);
 
-        if (!currentUser.getName().equals(request.getUsername()))
-            currentUser.setName(request.getUsername());
-        if (currentUser.getEmail() == null || !currentUser.getEmail().equals(request.getEmail()))
-            currentUser.setEmail(request.getEmail());
-        if (currentUser.getFirstName() == null || !currentUser.getFirstName().equals(request.getFirstName()))
-            currentUser.setFirstName(request.getFirstName());
-        if (currentUser.getLastName() == null || !currentUser.getLastName().equals(request.getLastName()))
-            currentUser.setLastName(request.getLastName());
-        if (currentUser.getDateOfBirth() == null || !currentUser.getDateOfBirth().equals(request.getDateOfBirth()))
-            currentUser.setDateOfBirth(request.getDateOfBirth());
+        currentUser.setName(request.getUsername());
+        currentUser.setEmail(request.getEmail());
+        currentUser.setFirstName(request.getFirstName());
+        currentUser.setLastName(request.getLastName());
+        currentUser.setDateOfBirth(request.getDateOfBirth());
 
         userRepository.save(currentUser);
         return userMapper.toDetailsDto(currentUser);

@@ -196,8 +196,7 @@ class ConstellationServiceTest {
         ConstellationDetailsDto dto = constellationService.registerConstellation(request);
 
         assertEquals(expected, dto);
-        verify(constellationRepository, times(1))
-                .save(any(Constellation.class));
+        verify(constellationRepository).save(any(Constellation.class));
     }
 
     @Test
@@ -225,17 +224,13 @@ class ConstellationServiceTest {
         ConstellationDetailsDto dto = constellationService.registerConstellation(request);
 
         assertEquals(expected, dto);
-        verify(constellationRepository, times(1))
-                .save(any(Constellation.class));
+        verify(constellationRepository).save(any(Constellation.class));
     }
 
     @Test
     void updateConstellationGivenAllDataChangedUpdatesConstellationFully() {
         Integer id = 10;
         ConstellationDto request = buildConstellationDto();
-        request.setGalaxyId(37);
-        request.setAdderId(33);
-        request.setVerifierId(34);
 
         Constellation existing = buildConstellation();
         existing.setId(id);
@@ -259,42 +254,44 @@ class ConstellationServiceTest {
         ConstellationDetailsDto dto = constellationService.updateConstellation(id, request);
 
         assertEquals(expected, dto);
-        verify(constellationRepository, times(1))
-                .save(any(Constellation.class));
+        verify(constellationRepository).save(any(Constellation.class));
     }
 
     @Test
     void updateConstellationGivenSomeDataChangedUpdatesConstellationPartially() {
         Integer id = 10;
         ConstellationDto request = buildConstellationDto();
+        request.setConstellationName("testConstellation");
         request.setVerifierId(34);
 
         Constellation existing = buildConstellation();
         existing.setId(id);
-        existing.setName(request.getConstellationName());
         existing.setVerifiedBy(null);
-        Galaxy galaxy = buildGalaxy(request.getGalaxyId(), "galaxyName");
-        User addedBy = buildUser(request.getAdderId(), "addedBy");
+
+        // set the request's fields to those "saved" in the database
+        request.setGalaxyId(existing.getGalaxy().getId());
+        request.setAdderId(existing.getAddedBy().getId());
+
         User verifiedBy = buildUser(request.getVerifierId(), "verifiedBy");
         Constellation updated = buildConstellation(
-                id, request.getConstellationName(), galaxy, addedBy, verifiedBy);
+                id, request.getConstellationName(), existing.getGalaxy(),
+                existing.getAddedBy(), verifiedBy);
 
         ConstellationDetailsDto expected = buildConstellationDetailsDto(updated);
 
         when(constellationRepository.findById(id))
                 .thenReturn(Optional.of(existing));
         when(galaxyService.getEntity(request.getGalaxyId(), existing.getGalaxy()))
-                .thenReturn(galaxy);
+                .thenReturn(existing.getGalaxy());
         when(userService.getEntity(request.getAdderId(), existing.getAddedBy()))
-                .thenReturn(addedBy);
+                .thenReturn(existing.getAddedBy());
         when(userService.getEntity(request.getVerifierId(), existing.getVerifiedBy()))
                 .thenReturn(verifiedBy);
 
         ConstellationDetailsDto dto = constellationService.updateConstellation(id, request);
 
         assertEquals(expected, dto);
-        verify(constellationRepository, times(1))
-                .save(any(Constellation.class));
+        verify(constellationRepository).save(any(Constellation.class));
     }
 
     @Test
@@ -305,27 +302,31 @@ class ConstellationServiceTest {
 
         Constellation existing = buildConstellation();
         existing.setId(id);
-        Galaxy galaxy = buildGalaxy(request.getGalaxyId(), "galaxyName");
-        User addedBy = buildUser(request.getAdderId(), "addedBy");
+
+        // set the request's fields to those "saved" in the database
+        request.setConstellationName(existing.getName());
+        request.setGalaxyId(existing.getGalaxy().getId());
+        request.setAdderId(existing.getAddedBy().getId());
+
         Constellation updated = buildConstellation(
-                id, request.getConstellationName(), galaxy, addedBy, null);
+                id, existing.getName(), existing.getGalaxy(),
+                existing.getAddedBy(), null);
 
         ConstellationDetailsDto expected = buildConstellationDetailsDto(updated);
 
         when(constellationRepository.findById(id))
                 .thenReturn(Optional.of(existing));
         when(galaxyService.getEntity(request.getGalaxyId(), existing.getGalaxy()))
-                .thenReturn(galaxy);
+                .thenReturn(existing.getGalaxy());
         when(userService.getEntity(request.getAdderId(), existing.getAddedBy()))
-                .thenReturn(addedBy);
+                .thenReturn(existing.getAddedBy());
         when(userService.getEntity(request.getVerifierId(), existing.getVerifiedBy()))
                 .thenReturn(null);
 
         ConstellationDetailsDto dto = constellationService.updateConstellation(id, request);
 
         assertEquals(expected, dto);
-        verify(constellationRepository, times(1))
-                .save(any(Constellation.class));
+        verify(constellationRepository).save(any(Constellation.class));
     }
 
     @Test
@@ -338,5 +339,11 @@ class ConstellationServiceTest {
         constellationService.deleteConstellation(1);
 
         verify(constellationRepository).delete(c);
+    }
+
+    @Test
+    void constellationMapperGivenNullConstellationReturnsNullDtos() {
+        assertNull(constellationMapper.toSummaryDto(null));
+        assertNull(constellationMapper.toDetailsDto(null));
     }
 }

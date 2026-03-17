@@ -48,20 +48,14 @@ public class StarService {
     }
 
     public StarDetailsDto updateStar(Integer id, StarDto request) {
-        var currentStar = findById(id);
+        Star currentStar = findById(id);
 
-        if (!currentStar.getName().equals(request.getStarName()))
-            currentStar.setName(request.getStarName());
-        if (!currentStar.getType().equals(request.getStarType()))
-            currentStar.setType(request.getStarType());
-        if (!currentStar.getRightAscension().equals(request.getRightAscension()))
-            currentStar.setRightAscension(request.getRightAscension());
-        if (!currentStar.getDeclination().equals(request.getDeclination()))
-            currentStar.setDeclination(request.getDeclination());
-        if (!currentStar.getApparentMagnitude().equals(request.getApparentMagnitude()))
-            currentStar.setApparentMagnitude(request.getApparentMagnitude());
-        if (!currentStar.getSpectralType().equals(request.getSpectralType()))
-            currentStar.setSpectralType(request.getSpectralType());
+        currentStar.setName(request.getStarName());
+        currentStar.setType(request.getStarType());
+        currentStar.setRightAscension(request.getRightAscension());
+        currentStar.setDeclination(request.getDeclination());
+        currentStar.setApparentMagnitude(request.getApparentMagnitude());
+        currentStar.setSpectralType(request.getSpectralType());
         currentStar.setConstellation(constellationService.getEntity(
                 request.getConstellationId(), currentStar.getConstellation()));
         currentStar.setAddedBy(userService.getEntity(
@@ -74,7 +68,7 @@ public class StarService {
     }
 
     public void deleteStar(Integer id) {
-        var currentStar = findById(id);
+        Star currentStar = findById(id);
         starRepository.delete(currentStar);
     }
 

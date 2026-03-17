@@ -46,20 +46,14 @@ public class GalaxyService {
     }
 
     public GalaxyDetailsDto updateGalaxy(Integer id, GalaxyDto request) {
-        var currentGalaxy = findById(id);
+        Galaxy currentGalaxy = findById(id);
 
-        if (!currentGalaxy.getName().equals(request.getGalaxyName()))
-            currentGalaxy.setName(request.getGalaxyName());
-        if (!currentGalaxy.getType().equals(request.getGalaxyType()))
-            currentGalaxy.setType(request.getGalaxyType());
-        if (!currentGalaxy.getDistanceMly().equals(request.getDistanceMly()))
-            currentGalaxy.setDistanceMly(request.getDistanceMly());
-        if (!currentGalaxy.getRedshift().equals(request.getRedshift()))
-            currentGalaxy.setRedshift(request.getRedshift());
-        if (!currentGalaxy.getMassSolar().equals(request.getMassSolar()))
-            currentGalaxy.setMassSolar(request.getMassSolar());
-        if (!currentGalaxy.getDiameterLy().equals(request.getDiameterLy()))
-            currentGalaxy.setDiameterLy(request.getDiameterLy());
+        currentGalaxy.setName(request.getGalaxyName());
+        currentGalaxy.setType(request.getGalaxyType());
+        currentGalaxy.setDistanceMly(request.getDistanceMly());
+        currentGalaxy.setRedshift(request.getRedshift());
+        currentGalaxy.setMassSolar(request.getMassSolar());
+        currentGalaxy.setDiameterLy(request.getDiameterLy());
         currentGalaxy.setAddedBy(userService.getEntity(
                 request.getAdderId(), currentGalaxy.getAddedBy()));
         currentGalaxy.setVerifiedBy(userService.getEntity(
@@ -70,7 +64,7 @@ public class GalaxyService {
     }
 
     public void deleteGalaxy(Integer id) {
-        var currentGalaxy = findById(id);
+        Galaxy currentGalaxy = findById(id);
         galaxyRepository.delete(currentGalaxy);
     }
 
