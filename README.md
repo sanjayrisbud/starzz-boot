@@ -135,49 +135,49 @@ sequenceDiagram
 
 #### Sample Responses
 
-- GET /constellations
+GET /constellations
 
     {
         "text: "Successfully called getConstellationList()"
     }
 
-- GET /constellations/100
+GET /constellations/100
 
     {
         "text: "Successfully called getConstellation(100)"
     }
 
-- GET /galaxies
+GET /galaxies
 
     {
         "text: "Successfully called getGalaxyList()"
     }
 
-- GET /galaxies/100
+GET /galaxies/100
 
     {
         "text: "Successfully called getGalaxy(100)"
     }
 
-- GET /stars
+GET /stars
 
     {
         "text: "Successfully called getStarList()"
     }
 
-- GET /stars/100
+GET /stars/100
 
     {
         "text: "Successfully called getStar(100)"
     }
 
-- GET /users
+GET /users
 
     {
         "text: "Successfully called getUserList()"
     }
 
-- GET /users/100
+GET /users/100
 
     {
         "text: "Successfully called getUser(100)"
@@ -450,7 +450,7 @@ This is a deliberate design decision:
 
 #### Sample Responses
 
-- GET /constellations
+GET /constellations
 
     [
         {
@@ -463,7 +463,7 @@ This is a deliberate design decision:
         }
     ]
 
-- GET /constellations/100
+GET /constellations/100
 
     {
         "constellationId": 100,
@@ -482,7 +482,7 @@ This is a deliberate design decision:
         }
     }
 
-- GET /galaxies
+GET /galaxies
 
     [
         {
@@ -495,7 +495,7 @@ This is a deliberate design decision:
         }
     ]
 
-- GET /galaxies/100
+GET /galaxies/100
 
     {
         "galaxyId": 100,
@@ -515,7 +515,7 @@ This is a deliberate design decision:
         }
     }
 
-- GET /stars
+GET /stars
 
     [
         {
@@ -528,7 +528,7 @@ This is a deliberate design decision:
         }
     ]
 
-- GET /stars/100
+GET /stars/100
 
     {
         "starId": 100,
@@ -552,7 +552,7 @@ This is a deliberate design decision:
         }
     }
 
-- GET /users
+GET /users
 
     [
         {
@@ -565,7 +565,7 @@ This is a deliberate design decision:
         }
     ]
 
-- GET /users/100
+GET /users/100
 
     {
         "userId": 100,
