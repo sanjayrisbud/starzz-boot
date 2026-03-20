@@ -1,11 +1,11 @@
 # starzz-boot
 
 ![Java](https://img.shields.io/badge/java-17-blue)
-![Spring Boot](https://img.shields.io/badge/springboot-4.0.2-brightgreen)
-![Maven](https://img.shields.io/badge/maven-3.3.4-orange)
+![Spring Boot](https://img.shields.io/badge/springboot-3.4.5-brightgreen)
+![Maven](https://img.shields.io/badge/maven-3.9.12-orange)
 ![MySQL](https://img.shields.io/badge/mysql-9.6-purple)
 
-This is a REST API backend created using Java's Spring Boot framework.  It demonstrates a full-stack backend design using MVC architecture, layered services, DTO mapping, validation, exception handling, and database integration with MySQL.
+This is a REST API backend created using Java's Spring Boot framework.  It demonstrates a backend design using MVC architecture, layered services, DTO mapping, validation, exception handling, and database integration with MySQL.
 
 This project serves two purposes:
 
@@ -41,7 +41,9 @@ fields `added_by` and `verified_by` to indicate the id of the users who made
 the finding and verified it, respectively.
 
 The database was created in MySQL.  The scripts to create the tables and
-load the dummy data are included in `assets` for reference.  
+load the dummy data are included in `assets` for reference.
+
+Our assumption is that we are working with a legacy database that cannot easily be altered.
 
 ## The Application
 
@@ -56,7 +58,9 @@ We don't add any dependencies for now; we will add them as we go along.
 
 ![Project Setup 2](assets/project_setup_2.png)
 
-After clicking **Create**, IntelliJ generates the starter project files (the project also includes Maven):
+> **Note:** The screenshot shows Spring Boot 4.0.2, which was the version used at project creation. This project has since been migrated to Spring Boot 3.4.5 for better ecosystem support and documentation availability.
+
+After clicking **Create**, IntelliJ generates starter project files (the project also includes Maven):
 
 ![Project Setup 3](assets/project_setup_3.png)
 
@@ -141,6 +145,8 @@ We also add **Lombok** for automatic generation of getters, setters, constructor
 
 (We add the scope because Lombok is only needed during compilation and shouldn't exist at runtime)
 
+> **Note:** Whenever you add a dependency to `pom.xml`, click the Load Maven Changes button (the elephant icon) in IntelliJ to download it.
+  
 For now, we will be referring to the `src/main/java` folder of our project.  We will talk about
 `src/test/java` later.
 
@@ -424,9 +430,9 @@ With dependencies added, we now configure our data source so Spring Boot can con
 database.  In `src/main/resources/application.yaml` we add the application's data source:
 
     datasource:
-        url: jdbc:mysql://localhost:3309/starzz
+        url: jdbc:mysql://localhost:3306/starzz
         username: root
-        password: root
+        password: <your database password>
     jpa:
         show-sql: true
 
@@ -787,17 +793,145 @@ With more pieces working together, it’s easy to accidentally break something w
 features. That’s why it’s a good idea to start writing **unit tests** now — they help us make
 sure each part works on its own and keep everything running smoothly as the project grows.
 
-In the next chapter, we’ll dive into **unit testing** using **JUnit 5** and **Mockito**.
-We’ll cover how to test our services and controllers, mock dependencies, and build a solid
-foundation so future updates won’t surprise us.
+Before we write tests, we need to make a couple of enhancements to our persistence layer.  In the next chapter, we enable our application to retrieve secrets from a `.env` file instead of putting them directly in `application.yaml`.  We also setup **H2**, an in-memory database that our tests can use instead of our MySQL database.
 
 </details>
 
-### Chapter 3: Setting up the unit tests
+### Chapter 3: Setting up persistence layer enhancements
+
+Project dependencies added:
+
+    Spring Dotenv
+    H2 Database Engine
+
+#### Overview
+
+```mermaid
+  flowchart     
+      A[Start Application] --> B{Production or Test?}
+      B -- Test --> C[Load test/resources/application.yaml]
+      B -- Production --> D[Load .env via spring-dotenv]
+      D --> E[Load main/resources/application.yaml]
+      C --> F[Connect to H2 in-memory database]
+      E --> G[Connect to MySQL database]
+```
+
+#### Chapter Summary
+
+This chapter enhances the persistence layer in two ways. First, database credentials are moved out of `application.yaml` and into a `.env` file, keeping secrets out of version control. Second, an H2 in-memory database is configured for the test environment, ensuring that automated tests run in isolation without touching the production MySQL database.
+
+<details>
+
+<summary>Chapter Walkthrough</summary>
+
+To interact with other systems, our application depends on secrets such as database credentials.  Currently, these secrets are stored in `application.yaml`.  This is not recommended.  For security, we should instead store secrets in a secrets repository and make `application.yaml` read the secrets from there.  For our project, we use a `.env` file as our secrets repository.  To enable our application to read `.env` files, we need the **Spring Dotenv** dependency.  We add this to `pom.xml`:
+
+    <dependency>
+        <groupId>me.paulschwarz</groupId>
+        <artifactId>spring-dotenv</artifactId>
+        <version>3.0.0</version>
+    </dependency>
+
+(We specify the version number because this is a third party dependency and not managed by Spring Boot).
+
+We create a file `.env` in the root of our project, containing:
+
+    DB_URL=jdbc:mysql://localhost:3306/starzz
+    DB_USERNAME=root
+    DB_PASSWORD=<your database password>
+
+And modify `src/main/resources/application.yaml` to refer to `.env`:
+
+    spring:
+        application:
+            name: starzz-boot
+        datasource:
+            url: ${DB_URL}
+            username: ${DB_USERNAME}
+            password: ${DB_PASSWORD}
+        jpa:
+            show-sql: true
+
+We now setup our in-memory database.
+
+Open `src/test/java/com/sanjayrisbud/starzzboot/StarzzBootApplicationTests.java`.  This is a starter test file automatically created by IntelliJ.  
+
+    ...
+    @SpringBootTest
+    class StarzzBootApplicationTests {
+
+        @Test
+        void contextLoads() {
+        }
+
+    }
+
+Briefly, `@SpringBootTest` is used to create a test environment.  It looks for the main class (which has `@SpringBootApplication`) and uses it to start the application context.
+
+When we execute the file, notice:
+
+![Persistence 1](assets/persistence_1.png)
+
+It simply loads the application and then exits.  However, reading trough the logs, we see the *Database version: 9.6*.  We know that our underlying database is *MySQL 9.6*.  Since the logs don't say otherwise, we can assume that our test environment uses our MySQL database.  This is not ideal.  We want our automated tests to use a different database from production so our tests don't pollute the production database.  In addition, we prefer that our test database be located in memory rather than a physical database so our tests execute faster.
+
+This is where H2 can help.  It is a lightweight and fast SQL database written in Java. It is particularly useful for testing and development because it allows you to create a temporary database that is automatically destroyed when the application stops.  To enable our application to use H2 for testing, we add the **H2 Database Engine** dependency to `pom.xml`:
+
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+We then create a new file `src/test/resources/application.yaml`:
+
+    spring:
+        datasource:
+            url: jdbc:h2:mem:testdb
+            username: sa
+            password:
+            driver-class-name: org.h2.Driver
+        jpa:
+            hibernate:
+                ddl-auto: create-drop
+            show-sql: true
+        h2:
+            console:
+                enabled: true
+
+Unlike `src/main/resources/application.yaml`, this file does not reference `.env` variables — H2 credentials are hardcoded since they are not real secrets. It also includes H2-specific settings: `driver-class-name` to specify the H2 driver, `ddl-auto: create-drop` to automatically create the schema at the start of each test run and drop it at the end, and `h2.console.enabled` to enable the H2 web console for inspection during development.
+
+When we execute `src/test/java/com/sanjayrisbud/starzzboot/StarzzBootApplicationTests.java`, notice:
+
+![Persistence 2](assets/persistence_2.png)
+
+We now see several logs containing *SQL CREATE, ALTER* and *DROP*, implying that a blank copy of our database is being created (Hibernate is able to do this by inspecting our data repository beans).  The *H2 console...* log confirms that the test database is indeed the H2 database.
+
+We have now completed setting up testing prerequisites.  In the next chapter, we’ll dive into **unit testing** using **JUnit 5** and **Mockito**.  We’ll cover how to test our services and controllers, mock dependencies, and build a solid foundation so future updates won’t surprise us.
+
+</details>
+
+### Chapter 4: Setting up the unit tests
 
 Project dependencies added:
 
     None
+
+#### Overview
+
+```mermaid
+flowchart TD
+    A[Test Class] --> B{Annotation?}
+    B -- "@ExtendWith(MockitoExtension)" --> C[No Spring context loaded]
+    B -- "@WebMvcTest" --> D[Web layer only]
+    B -- "@SpringBootTest" --> E[Full application context]
+    C --> F[Service tests\nFast, isolated]
+    D --> G[Controller tests\nMedium speed]
+    E --> H[Integration tests\nSlow, end-to-end]
+```
+
+#### Chapter Summary
+
+This chapter introduces unit testing using JUnit 5 and Mockito. Service layer tests are written using `@ExtendWith(MockitoExtension.class)`, with repositories and external services mocked and mappers used as real instances via `@Spy`. Controller tests use `@WebMvcTest` to test the web layer in isolation. Integration tests use `@SpringBootTest` with the H2 in-memory database to verify the full application stack end-to-end. *(Chapter in progress)*
 
 <details>
 
@@ -817,6 +951,8 @@ created the project, the dependency had already been added to `pom.xml`:
 
 (The scope specifies that the dependency is only needed during testing and won't be included when
 the application package is built.)
+
+We will use **WebMvcTest** to test our controllers.  In Spring Boot 3, `@WebMvcTest` support is already included in `spring-boot-starter-test`, so no additional dependency is needed.
 
 Up until now, we have been writing all our source code in the `src/main/java` folder of our project:
 
