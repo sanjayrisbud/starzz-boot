@@ -5,7 +5,7 @@
 ![Maven](https://img.shields.io/badge/maven-3.9.12-orange)
 ![MySQL](https://img.shields.io/badge/mysql-9.6-purple)
 
-This is a REST API backend created using Java's Spring Boot framework.  It demonstrates a backend design using MVC architecture, layered services, DTO mapping, validation, exception handling, and database integration with MySQL.
+This project is a production-style REST API built with Spring Boot, designed to demonstrate clean backend architecture, maintainable service-layer logic, and real-world API design patterns.  It demonstrates a backend design using MVC architecture, layered services, DTO mapping, validation, exception handling, and database integration with MySQL.
 
 This project serves two purposes:
 
@@ -27,6 +27,23 @@ Mermaid diagrams illustrate request flows, allowing readers to quickly grasp the
 - Unit testing using JUnit 5 and Mockito
 - Postman collection included
 - Architecture diagrams using Mermaid
+
+## Key Design Decisions
+
+- **DTO over Entity exposure**  
+  Prevents tight coupling between API and database schema.
+
+- **Service layer abstraction**  
+  Keeps controllers thin and business logic centralized.
+
+- **Manual mapping instead of MapStruct**  
+  Improves transparency for learning purposes.
+
+- **No user deletion**  
+  Preserves referential integrity in a legacy schema.
+
+- **Lazy loading for relationships**  
+  Avoids unnecessary database queries.
 
 ## The Dataset
 
@@ -115,6 +132,56 @@ sequenceDiagram
 | `/users/{id}`           | DELETE | Returns *Successfully called deleteUser(id)*             | 200 OK   |
 
 *A Postman collection for all routes is included in* `assets/starzz-boot.postman_collection.json`
+
+#### Sample Responses
+
+- GET /constellations
+
+    {
+        "text: "Successfully called getConstellationList()"
+    }
+
+- GET /constellations/100
+
+    {
+        "text: "Successfully called getConstellation(100)"
+    }
+
+- GET /galaxies
+
+    {
+        "text: "Successfully called getGalaxyList()"
+    }
+
+- GET /galaxies/100
+
+    {
+        "text: "Successfully called getGalaxy(100)"
+    }
+
+- GET /stars
+
+    {
+        "text: "Successfully called getStarList()"
+    }
+
+- GET /stars/100
+
+    {
+        "text: "Successfully called getStar(100)"
+    }
+
+- GET /users
+
+    {
+        "text: "Successfully called getUserList()"
+    }
+
+- GET /users/100
+
+    {
+        "text: "Successfully called getUser(100)"
+    }
 
 #### Chapter Summary
 
@@ -380,6 +447,134 @@ This is a deliberate design decision:
 - Cascading delete through these relationships would risk data loss and long transactional operations.
 - The existing database schema cannot be modified to add a soft-delete flag (`isActive`), so soft deletion is not possible.
 - Therefore, user deletion is intentionally disabled to preserve historical data integrity.
+
+#### Sample Responses
+
+- GET /constellations
+
+    [
+        {
+            "constellationId": 1,
+            "constellationName": "Pleiades"
+        },
+        {
+            "constellationId": 2,
+            "constellationName": "Orion"
+        }
+    ]
+
+- GET /constellations/100
+
+    {
+        "constellationId": 100,
+        "constellationName": "Cassopeia",
+        "galaxy": {
+            "galaxyId": 1,
+            "galaxyName": "Andromeda"
+        },
+        "addedBy": {
+            "userId": 10,
+            "username": "mike14288"
+        },
+        "verifiedBy": {
+            "userId": 37,
+            "username": "centwhistle45939"
+        }
+    }
+
+- GET /galaxies
+
+    [
+        {
+            "galaxyId": 1,
+            "galaxyName": "Andromeda"
+        },
+        {
+            "galaxyId": 2,
+            "galaxyName": "Poseidon"
+        }
+    ]
+
+- GET /galaxies/100
+
+    {
+        "galaxyId": 100,
+        "galaxyName": "Valhalla",
+        "galaxyType": "Barred Spiral",
+        "distanceMly": 5096,
+        "redshift": 4,
+        "massSolar": 5434403,
+        "diameterLy": 647254,
+        "addedBy": {
+            "userId": 15,
+            "username": "rtavener27922"
+        },
+        "verifiedBy": {
+            "userId": 62,
+            "username": "kchatres44202"
+        }
+    }
+
+- GET /stars
+
+    [
+        {
+            "starId": 1,
+            "starName": "Sol"
+        },
+        {
+            "starId": 2,
+            "starName": "Rigel"
+        }
+    ]
+
+- GET /stars/100
+
+    {
+        "starId": 100,
+        "starName": "Centaur",
+        "starType": "red dwarf star",
+        "constellation": {
+            "constellationId": 38,
+            "constellationName": "Canis Minor"
+        },
+        "rightAscension": 10,
+        "declination": 78,
+        "apparentMagnitude": -12,
+        "spectralType": "O",
+        "addedBy": {
+            "userId": 1,
+            "username": "ebalducci29128"
+        },
+        "verifiedBy": {
+            "userId": 89,
+            "username": "ogarriock20720"
+        }
+    }
+
+- GET /users
+
+    [
+        {
+            "userId": 1,
+            "username": "ebalducci29128"
+        },
+        {
+            "userId": 2,
+            "username": "ldilloway50275"
+        }
+    ]
+
+- GET /users/100
+
+    {
+        "userId": 100,
+        "username": "tperazzo50392",
+        "email": "torey.perazzo@yahoo.com",
+        "firstName": "Torey",
+        "lastName": "Perazzo",
+        "dateOfBirth": "1998-05-26"
+    }
 
 #### Chapter Summary
 
