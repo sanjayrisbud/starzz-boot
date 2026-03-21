@@ -24,7 +24,7 @@ public class UserService {
                 .toList();
     }
 
-    public UserDetailsDto getUser(int id) {
+    public UserDetailsDto getUser(Integer id) {
         return userMapper.toDetailsDto(findById(id));
     }
 

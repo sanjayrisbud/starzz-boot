@@ -1240,4 +1240,64 @@ This is purely for readability.
 
 The other classes in the `services` package follow a similar logic.
 
+We now write unit tests for our controllers.  In package `com.sanjayrisbud.starzzboot.controllers`
+we create class `ConstellationControllerTest` to contain our unit tests for `ConstellationController`:
+
+    ...
+    @WebMvcTest(ConstellationController.class)
+    class ConstellationControllerTest {
+
+        @Autowired
+        private MockMvc mockMvc;
+
+        @Autowired
+        private ObjectMapper objectMapper;
+
+        @MockitoBean
+        private ConstellationService constellationService;
+
+        @Test
+        void getConstellationListReturns200WithEmptyList() throws Exception {
+            when(constellationService.getConstellationList()).thenReturn(List.of());
+
+            mockMvc.perform(get("/constellations"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(0));
+        }
+
+    @Test
+    void getConstellationGivenExistingIdReturns200AndConstellation() throws Exception {
+        Constellation c = buildConstellation();
+        ConstellationDetailsDto dto = buildConstellationDetailsDto(c);
+
+        when(constellationService.getConstellation(c.getId())).thenReturn(dto);
+
+        mockMvc.perform(get("/constellations/" + c.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.constellationId").value(c.getId()));
+    }
+
+    @Test
+    void getConstellationGivenNonExistentIdReturns404AndError() throws Exception {
+        Integer nonExistentId = 999;
+
+        when(constellationService.getConstellation(nonExistentId))
+                .thenThrow(new ResourceNotFoundException("Constellation", nonExistentId));
+
+        mockMvc.perform(get("/constellations/" + nonExistentId))
+                .andExpect(status().isNotFound());
+    }
+
+    ...
+
+In the previous chapter, we briefly encountered `@SpringBootTest` and mentioned that it loads the full application context. For controller tests, we don't need the full context — we only care about the web layer.  `@WebMvcTest` loads the web layer — controllers, exception handlers, filters, and other web-related beans — without starting a real server or connecting to a database.  We specify the controller class (in this case, `ConstellationController`) so that only that controller is loaded, rather than all controllers in the application.  However, service dependencies are not part of the web layer and are not auto loaded, so we must provide mock instances of these dependencies.
+
+Since `ConstellationController` has a dependency on `ConstellationService`, we declare a mock instance of it using `@MockitoBean`.  `MockMvc` is the actual class that allows us to generate mock HTTP calls, while `ObjectMapper` serializes Java objects to JSON strings for use as request bodies in POST and PUT tests — this is necessary because MockMvc's `.content()` method expects a `String`, not a Java object.  We declare instances of both classes as beans and annotate them with `@Autowired`.  When a `ConstellationControllerTest` instance is later initialized for executing tests, all three beans are automatically injected into the instance.
+
+> **Note:** In service tests, Mockito injects dependencies via constructor injection. In controller tests, Spring manages the beans and are injected via field injection. Different test types, different frameworks for wiring.
+
+Our tests all have the `throws Exception` clause.  This is because when we call `mockMvc.perform()` it may throw an exception.
+
+The other classes in the `controllers` package follow a similar logic.
+
 </details>

@@ -1,7 +1,6 @@
 package com.sanjayrisbud.starzzboot.controllers;
 
 import com.sanjayrisbud.starzzboot.dtos.*;
-import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.services.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -24,11 +23,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDetailsDto> getUser(@PathVariable Integer id) {
-        var user = userService.getUser(id);
-        if (user == null)
-            throw new ResourceNotFoundException("User", id);
-
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(userService.getUser(id));
     }
 
     @PostMapping
