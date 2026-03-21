@@ -1105,7 +1105,7 @@ We have now completed setting up testing prerequisites.  In the next chapter, we
 
 </details>
 
-### Chapter 4: Setting up the unit tests
+### Chapter 4: Setting up unit tests
 
 Project dependencies added:
 
@@ -1126,7 +1126,7 @@ flowchart TD
 
 #### Chapter Summary
 
-This chapter introduces unit testing using JUnit 5 and Mockito. Service layer tests are written using `@ExtendWith(MockitoExtension.class)`, with repositories and external services mocked and mappers used as real instances via `@Spy`. Controller tests use `@WebMvcTest` to test the web layer in isolation. Integration tests use `@SpringBootTest` with the H2 in-memory database to verify the full application stack end-to-end. *(Chapter in progress)*
+This chapter introduces unit testing using JUnit 5 and Mockito. Service layer tests are written using `@ExtendWith(MockitoExtension.class)`, with repositories and external services mocked and mappers used as real instances via `@Spy`. Controller tests use `@WebMvcTest` to test the web layer in isolation, with services replaced by Mockito mocks via `@MockitoBean`.
 
 <details>
 
@@ -1300,4 +1300,16 @@ Our tests all have the `throws Exception` clause.  This is because when we call 
 
 The other classes in the `controllers` package follow a similar logic.
 
+In the next chapter, we introduce integration tests. Unlike the unit tests in this chapter, integration tests load the full application context and interact with a real database — in our case, the H2 in-memory database we configured in Chapter 3. This allows us to verify that all layers of the application work correctly together.
+
 </details>
+
+### Chapter 5: Setting up integration tests
+
+Project dependencies added:
+
+    None
+
+#### Chapter Summary
+
+*(Chapter in progress)*
