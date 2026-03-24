@@ -1521,6 +1521,8 @@ As discussed, `@SpringBootTest` is used to load the application context.  This a
 
 The other classes in the `integration` package follow a similar logic.
 
+</details>
+
 ## Conclusion
 
 **starzz-boot** demonstrates a complete, production-style Spring Boot REST API built incrementally — from setting up routes and wiring in a MySQL database, to layering in DTO mapping, validation, and global exception handling, to covering the application with unit tests at the service and controller layers, and finally verifying the full request lifecycle with integration tests backed by an in-memory H2 database.  Each chapter builds on the last, reflecting how a real backend evolves in practice.
