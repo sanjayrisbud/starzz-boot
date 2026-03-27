@@ -107,6 +107,8 @@ Project dependencies added:
 
 #### Overview
 
+This chapter sets up the foundation of the Spring Boot application and demonstrates the basic routing and controller structure. It shows how requests flow from the DispatcherServlet to controllers and how endpoints are defined using the MVC pattern. Hardcoded responses are used to verify routing, providing a clear view of how controllers handle HTTP requests. By the end, the project has a working skeleton API that illustrates the architecture and request flow.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -153,7 +155,7 @@ sequenceDiagram
 GET /constellations
 ```json
 {
-    "text: "Successfully called getConstellationList()"
+    "text": "Successfully called getConstellationList()"
 }
 ```
 
@@ -161,7 +163,7 @@ GET /constellations/100
 
 ```json
 {
-    "text: "Successfully called getConstellation(100)"
+    "text": "Successfully called getConstellation(100)"
 }
 ```
 
@@ -169,7 +171,7 @@ GET /galaxies
 
 ```json
 {
-    "text: "Successfully called getGalaxyList()"
+    "text": "Successfully called getGalaxyList()"
 }
 ```
 
@@ -177,7 +179,7 @@ GET /galaxies/100
 
 ```json
 {
-    "text: "Successfully called getGalaxy(100)"
+    "text": "Successfully called getGalaxy(100)"
 }
 ```
 
@@ -185,7 +187,7 @@ GET /stars
 
 ```json
 {
-    "text: "Successfully called getStarList()"
+    "text": "Successfully called getStarList()"
 }
 ```
 
@@ -193,7 +195,7 @@ GET /stars/100
 
 ```json
 {
-    "text: "Successfully called getStar(100)"
+    "text": "Successfully called getStar(100)"
 }
 ```
 
@@ -201,7 +203,7 @@ GET /users
 
 ```json
 {
-    "text: "Successfully called getUserList()"
+    "text": "Successfully called getUserList()"
 }
 ```
 
@@ -209,13 +211,9 @@ GET /users/100
 
 ```json
 {
-    "text: "Successfully called getUser(100)"
+    "text": "Successfully called getUser(100)"
 }
 ```
-
-#### Chapter Summary
-
-This chapter sets up the foundation of the Spring Boot application and demonstrates the basic routing and controller structure. It shows how requests flow from the DispatcherServlet to controllers and how endpoints are defined using the MVC pattern. Hardcoded responses are used to verify routing, providing a clear view of how controllers handle HTTP requests. By the end, the project has a working skeleton API that illustrates the architecture and request flow.
 
 <details>
 
@@ -254,15 +252,17 @@ For now, we will be referring to the `src/main/java` folder of our project.  We 
 One of the auto-generated files in our project is `StarzzBootApplication.java` in package
 `com.sanjayrisbud.starzzboot`:
 
+```java
     ... 
     @SpringBootApplication
     public class StarzzBootApplication {
-    
+
         public static void main(String[] args) {
             SpringApplication.run(StarzzBootApplication.class, args);
         }
-    
+
     }
+```
 
 This file defines the class `StarzzBootApplication`, which serves as the entrypoint to our
 application.  The `@SpringBootApplication` annotation enables component scanning, which instructs
@@ -276,12 +276,14 @@ We now define our application's endpoints.  First we define a class to hold plai
 requests to our API endpoints.  In package `com.sanjayrisbud.starzzboot` we add a new package,
 `dtos`.  In this package we create a class `Message`:
 
+```java
     @AllArgsConstructor
     @Getter
     @ToString
     public class Message {
         private String text;
     }
+```
 
 We annotate the class with `@AllArgsConstructor`, `@Getter` and `@ToString` so Lombok will
 generate a constructor, getter and toString() method for us.
@@ -297,6 +299,7 @@ respond accordingly.  In package `com.sanjayrisbud.starzzboot` we add a new pack
 
 A sample class in the `controllers` package is `ConstellationController`:
 
+```java
     ...
     @RestController
     @RequestMapping("/constellations")
@@ -305,17 +308,18 @@ A sample class in the `controllers` package is `ConstellationController`:
         public Message getConstellationList() {
             return new Message("Successfully called getConstellationList()");
         }
-    
+
         @GetMapping("/{id}")
         public Message getConstellation(@PathVariable Long id) {
             return new Message("Successfully called getConstellation(" + id + ")");
         }
-    
+
         @PostMapping
         public Message registerConstellation(@RequestBody Message request) {
             return new Message("Successfully called registerConstellation(" + request + ")");
         }
     ...
+```
 
 We annotate the class with `@RestController`, which marks the class as a controller where every
 method returns a domain object instead of an HTML view.  The `@RequestMapping` annotation
@@ -348,6 +352,8 @@ Project dependencies added:
     Jakarta Bean Validation
 
 #### Overview
+
+This chapter introduces the persistence layer and connects the application to a MySQL database. Entities, JPA annotations, and relationships are defined, along with DTOs for clean data transfer. The repository and service layers are implemented to manage database interactions, and controllers are connected to services to handle requests and responses. Validation, exception handling, and structured response patterns are also included, making the API fully functional with proper separation of concerns.
 
 ##### HTTP GET
 
@@ -504,7 +510,7 @@ GET /constellations/100
 ```json
 {
     "constellationId": 100,
-    "constellationName": "Cassopeia",
+    "constellationName": "Cassiopeia",
     "galaxy": {
         "galaxyId": 1,
         "galaxyName": "Andromeda"
@@ -581,7 +587,7 @@ GET /stars/100
     "starType": "red dwarf star",
     "constellation": {
         "constellationId": 38,
-        "constellationName": "Canis Minor"
+        "constellationName": "Cans Minor"
     },
     "rightAscension": 10,
     "declination": 78,
@@ -625,10 +631,6 @@ GET /users/100
     "dateOfBirth": "1998-05-26"
 }
 ```
-
-#### Chapter Summary
-
-This chapter introduces the persistence layer and connects the application to a MySQL database. Entities, JPA annotations, and relationships are defined, along with DTOs for clean data transfer. The repository and service layers are implemented to manage database interactions, and controllers are connected to services to handle requests and responses. Validation, exception handling, and structured response patterns are also included, making the API fully functional with proper separation of concerns.
 
 <details>
 
@@ -701,6 +703,7 @@ add classes to abstract tables and the operations on them.  In `com.sanjayrisbud
 we add a new package, `models`, to contain the table abstractions.  An example class is
 `Constellation`:
 
+```java
     ...
     @Entity
     @AllArgsConstructor
@@ -714,10 +717,11 @@ we add a new package, `models`, to contain the table abstractions.  An example c
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "constellation_id")
         private Integer id;
-    
+
         @Column(name = "constellation_name")
         private String name;
     ...
+```
 
 The `@Entity` annotation specifies that the class is an abstraction of a database table, and
 `@Table` specifies the actual table name.  Each instance of this class represents one record
@@ -735,11 +739,13 @@ We then define relationships with other entities.  Schema-wise, we have a many-t
 between `constellations` and `galaxies`; the foreign key is `galaxy_id`  We express that relationship
 using:
 
+```java
     ...
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "galaxy_id")
     private Galaxy galaxy;
     ...
+```
 
 Our entity for the `galaxies` table is `Galaxy`; we define a field `galaxy` to refer to it.  Since
 this field uses a foreign key to refer to the parent `Galaxy` we annotate the field with
@@ -750,8 +756,10 @@ entity only when we explicitly ask for it, which is called lazy loading.
 
 In addition, this field has a symmetric field in the entity `Galaxy`:
 
+```java
     @OneToMany(targetEntity = Constellation.class, mappedBy = "galaxy", cascade = CascadeType.REMOVE)
     private Set<Constellation> constellations = new HashSet<>();
+```
 
 This field does not correspond to a physical column in the `galaxies` table; it represents the
 inverse side of the relationship.  It is a field for the set of its children `Constellation`
@@ -762,6 +770,7 @@ constellations.
 
 Two other fields in `Constellation` are defined similarly:
 
+```java
     ...
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "added_by")
@@ -771,14 +780,17 @@ Two other fields in `Constellation` are defined similarly:
     @JoinColumn(name = "verified_by")
     private User verifiedBy;
     ...
+```
 
 The symmetric fields in the `User` entity corresponding to the table `users`:
 
+```java
     @OneToMany(targetEntity = Constellation.class, mappedBy = "addedBy")
     private Set<Constellation> constellationsAdded = new HashSet<>();
 
     @OneToMany(targetEntity = Constellation.class, mappedBy = "verifiedBy")
     private Set<Constellation> constellationsVerified = new HashSet<>();
+```
 
 The other classes in the `models` package follow a similar logic.
 
@@ -794,9 +806,11 @@ context. This allows the repositories to be injected into services or controller
 In `com.sanjayrisbud.starzzboot`, we add a new package, `repositories`, to contain the repositories.
 An example interface is`ConstellationRepository`:
 
+```java
     ...
     public interface ConstellationRepository extends JpaRepository<Constellation, Integer> {
     }
+```
 
 The other interfaces in the `repositories` package follow a similar logic.
 
@@ -805,11 +819,13 @@ We create mappings from our entities to custom objects, and send those objects i
 custom objects are known as data transfer objects.  We need to create DTOs for our entities.
 In `com.sanjayrisbud.starzzboot.dtos`, we add our DTOs.  An example class is `ConstellationSummaryDto`:
 
+```java
     ...
     public record ConstellationSummaryDto (
         Integer constellationId,
         String constellationName
     ) {}
+```
 
 Since we only need fields for the constellation's id and name, we define this class as a
 `record` instead.  This guarantees immutability and clearly signifies its intent as a
@@ -817,6 +833,7 @@ data carrier.
 
 Another example is `ConstellationDetailsDto`:
 
+```java
     ...
     @Builder
     @Data
@@ -834,6 +851,7 @@ Another example is `ConstellationDetailsDto`:
         private UserSummaryDto addedBy;
         private UserSummaryDto verifiedBy;
     }
+```
 
 This DTO has additional fields to display the parent galaxy, and the adder and verifier.  These
 fields are themselves DTOs.  `@JsonPropertyOrder` specifies the order of the fields in the DTO
@@ -844,6 +862,7 @@ more flexibly.  We specify this using `@Builder`.
 
 We also have a DTO to accept JSON input when processing requests to add or update constellations:
 
+```java
     @Builder
     @Data
     public class ConstellationDto {
@@ -852,6 +871,7 @@ We also have a DTO to accept JSON input when processing requests to add or updat
         @NotNull private Integer adderId;
         private Integer verifierId;
     }
+```
 
 We add validation annotations to the fields.  `@NotNull` specifies that the field must be present
 and cannot be set to `null`.  `@NotBlank` specifies that the field must be present and cannot be
@@ -865,6 +885,7 @@ generate mappings for us, but for the purposes of this application we will gener
 In `com.sanjayrisbud.starzzboot`, we add a new package, `mappers`, to contain the classes for
 our entity mappers.  An example class is `ConstellationMapper`:
 
+```java
     ...
     @AllArgsConstructor
     @Component
@@ -896,6 +917,7 @@ our entity mappers.  An example class is `ConstellationMapper`:
                     .build();
         }
     }
+```
 
 `@Component` tags this class as a bean.  In `toSummaryDto()` we create a summary DTO using a regular
 constructor.  In `toDetailsDto()` we first get summary DTOs of the related entities, then use the
@@ -909,17 +931,20 @@ information about these events.  We do this with exception handling.  In package
 `com.sanjayrisbud.starzzboot.dtos` we add a new class, `ErrorResponseDto`, to contain the
 error message:
 
+```java
     ...
     public record ErrorResponseDto(
         String message,
         LocalDateTime timestamp
     ) {}
+```
 
 It has fields for the error message and the error's timestamp.
 
 In `com.sanjayrisbud.starzzboot`, we add a new package, `exceptions`, to contain the classes
 for our exception handling.  We create class `ResourceNotFoundException`:
 
+```java
     ...
     @Getter
     public class ResourceNotFoundException extends RuntimeException {
@@ -934,12 +959,14 @@ for our exception handling.  We create class `ResourceNotFoundException`:
         }
     
     }
+```
 
 This will be the custom exception thrown whenever our application searches for nonexistent
 resources.
 
 In the same package, we create class `GlobalExceptionHandler`:
 
+```java
     ...
     @RestControllerAdvice
     public class GlobalExceptionHandler {
@@ -953,6 +980,7 @@ In the same package, we create class `GlobalExceptionHandler`:
         }
     }
     ...
+```
 
 The `@RestControllerAdvice` annotation makes this class handle all our custom exceptions.
 `@ExceptionHandler` specifies the method to handle specific exception classes.  In this case,
@@ -966,6 +994,7 @@ request handling and not need to worry about the business rules.
 In `com.sanjayrisbud.starzzboot`, we add a new package, `services`, to contain the classes for our
 service layer.  An example class is `ConstellationService`:
 
+```java
     ...
     @AllArgsConstructor
     @Service
@@ -997,6 +1026,7 @@ service layer.  An example class is `ConstellationService`:
             return constellationMapper.toDetailsDto(constellation);
         }
     ...
+```
 
 `@Service` specifies that this class is a bean.  It has private fields for beans, which were
 automatically injected by Spring.  We then define methods to implement CRUD operations.
@@ -1005,6 +1035,7 @@ The other classes in the `services` package follow a similar logic.
 
 Finally, we rewrite our `ConstellationController`:
 
+```java
     ...
     @AllArgsConstructor
     @RestController
@@ -1033,6 +1064,7 @@ Finally, we rewrite our `ConstellationController`:
             return ResponseEntity.created(uri).body(newConstellation);
         }
     ...
+```
 
 We introduce a private field for the service bean.  When the endpoint handlers receive requests,
 they now redirect those requests to different methods in the service bean, and then generate
@@ -1047,7 +1079,7 @@ With more pieces working together, it’s easy to accidentally break something w
 features. That’s why it’s a good idea to start writing **unit tests** now — they help us make
 sure each part works on its own and keep everything running smoothly as the project grows.
 
-Before we write tests, we need to make a couple of enhancements to our persistence layer.  In the next chapter, we enable our application to retrieve secrets from a `.env` file instead of putting them directly in `application.yaml`.  We also setup **H2**, an in-memory database that our tests can use instead of our MySQL database.
+Before we write tests, we need to make a couple of enhancements to our persistence layer.  In the next chapter, we enable our application to retrieve secrets from a `.env` file instead of putting them directly in `application.yaml`.  We also set up **H2**, an in-memory database that our tests can use instead of our MySQL database.
 
 </details>
 
@@ -1060,6 +1092,8 @@ Project dependencies added:
 
 #### Overview
 
+This chapter enhances the persistence layer in two ways. First, database credentials are moved out of `application.yaml` and into a `.env` file, keeping secrets out of version control. Second, an H2 in-memory database is configured for the test environment, ensuring that automated tests run in isolation without touching the production MySQL database.
+
 ```mermaid
   flowchart     
       A[Start Application] --> B{Production or Test?}
@@ -1070,15 +1104,11 @@ Project dependencies added:
       E --> G[Connect to MySQL database]
 ```
 
-#### Chapter Summary
-
-This chapter enhances the persistence layer in two ways. First, database credentials are moved out of `application.yaml` and into a `.env` file, keeping secrets out of version control. Second, an H2 in-memory database is configured for the test environment, ensuring that automated tests run in isolation without touching the production MySQL database.
-
 <details>
 
 <summary>Chapter Walkthrough</summary>
 
-To interact with other systems, our application depends on secrets such as database credentials.  Currently, these secrets are stored in `application.yaml`.  This is not recommended.  For security, we should instead store secrets in a secrets repository and make `application.yaml` read the secrets from there.  For our project, we use a `.env` file as our secrets repository.  To enable our application to read `.env` files, we need the **Spring Dotenv** dependency.  We add this to `pom.xml`:
+To interact with other systems, our application depends on secrets such as database credentials.  Currently, these secrets are stored in `application.yaml`.  This is not recommended.  For security, we should instead store secrets in a secrets repository and make `application.yaml` read the secrets from there.  For our project, we use a `.env` file as our secrets' repository.  To enable our application to read `.env` files, we need the **Spring Dotenv** dependency.  We add this to `pom.xml`:
 
 ```xml
 <dependency>
@@ -1112,10 +1142,11 @@ spring:
         show-sql: true
 ```
 
-We now setup our in-memory database.
+We now set up our in-memory database.
 
 Open `src/test/java/com/sanjayrisbud/starzzboot/StarzzBootApplicationTests.java`.  This is a starter test file automatically created by IntelliJ.  
 
+```java
     ...
     @SpringBootTest
     class StarzzBootApplicationTests {
@@ -1125,6 +1156,7 @@ Open `src/test/java/com/sanjayrisbud/starzzboot/StarzzBootApplicationTests.java`
         }
 
     }
+```
 
 Briefly, `@SpringBootTest` is used to create a test environment.  It looks for the main class (which has `@SpringBootApplication`) and uses it to start the application context.
 
@@ -1132,7 +1164,7 @@ When we execute the file, notice:
 
 ![Persistence 1](assets/persistence_1.png)
 
-It simply loads the application and then exits.  However, reading trough the logs, we see the *Database version: 9.6*.  We know that our underlying database is *MySQL 9.6*.  Since the logs don't say otherwise, we can assume that our test environment uses our MySQL database.  This is not ideal.  We want our automated tests to use a different database from production so our tests don't pollute the production database.  In addition, we prefer that our test database be located in memory rather than a physical database so our tests execute faster.
+It simply loads the application and then exits.  However, reading through the logs, we see the *Database version: 9.6*.  We know that our underlying database is *MySQL 9.6*.  Since the logs don't say otherwise, we can assume that our test environment uses our MySQL database.  This is not ideal.  We want our automated tests to use a different database from production so our tests don't pollute the production database.  In addition, we prefer that our test database be located in memory rather than a physical database so our tests execute faster.
 
 This is where H2 can help.  It is a lightweight and fast SQL database written in Java. It is particularly useful for testing and development because it allows you to create a temporary database that is automatically destroyed when the application stops.  To enable our application to use H2 for testing, we add the **H2 Database Engine** dependency to `pom.xml`:
 
@@ -1182,6 +1214,8 @@ Project dependencies added:
 
 #### Overview
 
+This chapter introduces unit testing using JUnit 5 and Mockito. Service layer tests are written using `@ExtendWith(MockitoExtension.class)`, with repositories and external services mocked and mappers used as real instances via `@Spy`. Controller tests use `@WebMvcTest` to test the web layer in isolation, with services replaced by Mockito mocks via `@MockitoBean`.
+
 ```mermaid
 flowchart TD
     A[Test Class] --> B{Annotation?}
@@ -1192,10 +1226,6 @@ flowchart TD
     D --> G[Controller tests\nMedium speed]
     E --> H[Integration tests\nSlow, end-to-end]
 ```
-
-#### Chapter Summary
-
-This chapter introduces unit testing using JUnit 5 and Mockito. Service layer tests are written using `@ExtendWith(MockitoExtension.class)`, with repositories and external services mocked and mappers used as real instances via `@Spy`. Controller tests use `@WebMvcTest` to test the web layer in isolation, with services replaced by Mockito mocks via `@MockitoBean`.
 
 <details>
 
@@ -1235,6 +1265,7 @@ the same as the name of the class being tested, with the suffix `Test`.
 We start with writing unit tests for our services.  In package `com.sanjayrisbud.starzzboot.services`
 we create class `ConstellationServiceTest` to contain our unit tests for `ConstellationService`:
 
+```java
     ...
     @ExtendWith(MockitoExtension.class)
     class ConstellationServiceTest {
@@ -1274,6 +1305,7 @@ we create class `ConstellationServiceTest` to contain our unit tests for `Conste
             assertEquals(existingConstellation, c);
         }
     ...
+```
 
 To test `ConstellationService`, we create an instance of it.  Since it depends on other classes,
 we would also need instances of those dependencies.
@@ -1303,8 +1335,10 @@ Notice also the `assertNull()` and `when()` methods.  They are static methods de
 classes *Assertions* and *Mockito*, respectively.  For common testing helpers, we can statically
 import them:
 
+```java
     import static org.junit.jupiter.api.Assertions.*;
     import static org.mockito.Mockito.*;
+```
 
 This allows us to call the static methods without having to prefix them with the class name.
 This is purely for readability.
@@ -1314,6 +1348,7 @@ The other classes in the `services` package follow a similar logic.
 We now write unit tests for our controllers.  In package `com.sanjayrisbud.starzzboot.controllers`
 we create class `ConstellationControllerTest` to contain our unit tests for `ConstellationController`:
 
+```java
     ...
     @WebMvcTest(ConstellationController.class)
     class ConstellationControllerTest {
@@ -1360,8 +1395,9 @@ we create class `ConstellationControllerTest` to contain our unit tests for `Con
     }
 
     ...
+```
 
-In the previous chapter, we briefly encountered `@SpringBootTest` and mentioned that it loads the full application context. For controller tests, we don't need the full context — we only care about the web layer.  `@WebMvcTest` loads the web layer — controllers, exception handlers, filters, and other web-related beans — without starting a real server or connecting to a database.  We specify the controller class (in this case, `ConstellationController`) so that only that controller is loaded, rather than all controllers in the application.  However, service dependencies are not part of the web layer and are not auto loaded, so we must provide mock instances of these dependencies.
+In the previous chapter, we briefly encountered `@SpringBootTest` and mentioned that it loads the full application context. For controller tests, we don't need the full context — we only care about the web layer.  `@WebMvcTest` loads the web layer — controllers, exception handlers, filters, and other web-related beans — without starting a real server or connecting to a database.  We specify the controller class (in this case, `ConstellationController`) so that only that controller is loaded, rather than all controllers in the application.  However, service dependencies are not part of the web layer and are not autoloaded, so we must provide mock instances of these dependencies.
 
 Since `ConstellationController` has a dependency on `ConstellationService`, we declare a mock instance of it using `@MockitoBean`.  `MockMvc` is the actual class that allows us to generate mock HTTP calls, while `ObjectMapper` serializes Java objects to JSON strings for use as request bodies in POST and PUT tests — this is necessary because MockMvc's `.content()` method expects a `String`, not a Java object.  We declare instances of both classes as beans and annotate them with `@Autowired`.  When a `ConstellationControllerTest` instance is later initialized for executing tests, all three beans are automatically injected into the instance.
 
@@ -1382,6 +1418,8 @@ Project dependencies added:
     None
 
 #### Overview
+
+This chapter introduces integration tests.  Integration tests verify that all layers of the application work correctly together — controller, service, repository, and database — using a real Spring context and an in-memory H2 database.
 
 ```mermaid
 sequenceDiagram
@@ -1419,10 +1457,6 @@ sequenceDiagram
     DispatcherServlet -->> MockMvc: HTTP Response
 ```
 
-#### Chapter Summary
-
-Integration tests verify that all layers of the application work correctly together — controller, service, repository, and database — using a real Spring context and an in-memory H2 database.
-
 <details>
 
 <summary>Chapter Walkthrough</summary>
@@ -1431,6 +1465,7 @@ We use integration tests to check that all the components that we have coded wor
 
 We revisit `src/test/java/com/sanjayrisbud/starzzboot/StarzzBootApplicationTests.java`:
 
+```java
     ...
     @SpringBootTest
     class StarzzBootApplicationTests {
@@ -1440,6 +1475,7 @@ We revisit `src/test/java/com/sanjayrisbud/starzzboot/StarzzBootApplicationTests
         }
 
     }
+```
 
 `@SpringBootTest` is used to create a test environment.  `@SpringBootTest` loads everything that `@SpringBootApplication` does i.e. a fully-fledged application context. It even loads the `application.yaml` file. It also enables beans to inject using `@Autowired`.
 
@@ -1447,7 +1483,7 @@ We learned from Chapter 4 that `MockMvc` allows us to generate HTTP requests, th
 
 Instead of having one class test all our endpoints, we can make each controller (`Galaxy`, `Constellation`, `Star`, `User`) have a dedicated integration test class. The structure mirrors the controller tests from Chapter 4. These 4 classes would each need `@SpringBootTest`; Spring will cache 1 application context to be used by these classes. There are no mocks — all beans are real, and requests flow through the full stack.
 
-We will need to seed our database with some test data.  We can do this in our test files with `@BeforeAll` methods that insert seed data.  However a cleaner approach would be to leverage our load script in `assets/load.sql`.  We configure Spring Boot to auto-execute the script once when the H2 database initializes. This keeps test classes free of setup boilerplate and ensures all tests share a consistent, realistic dataset (100 records per table).
+We will need to seed our database with some test data.  We can do this in our test files with `@BeforeAll` methods that insert seed data.  However, a cleaner approach would be to leverage our load script in `assets/load.sql`.  We configure Spring Boot to auto-execute the script once when the H2 database initializes. This keeps test classes free of setup boilerplate and ensures all tests share a consistent, realistic dataset (100 records per table).
 
 In unit tests, we mock operations on the database.  In integration tests, we don't mock database calls.  Tests that modify data (*POST, PUT, DELETE*) might affect other tests.  To avoid this, these tests are annotated with `@Transactional`. Spring rolls back the transaction after each test, leaving the seeded data intact for other tests.  This allows tests to run independently without interference.
 
@@ -1484,6 +1520,7 @@ In `sql.init` we specify that the seed script should always run. `mode: always` 
 
 We create package `com.sanjayrisbud.integration` to contain our integration tests.  We create class `ConstellationControllerIT` to contain the integration tests for `ConstellationController`:
 
+```java
     ...
     @SpringBootTest(classes = StarzzBootApplication.class)
     @AutoConfigureMockMvc
@@ -1516,13 +1553,174 @@ We create package `com.sanjayrisbud.integration` to contain our integration test
                     .andExpect(status().isNotFound());
         }
     ...
+```
 
 As discussed, `@SpringBootTest` is used to load the application context.  This annotation tells Spring Boot to search for the main class in the current package and in parent packages.  However since the main class is in `com.sanjayrisbud.starzzboot` i.e. a sibling package, Spring Boot won't be able to find it automatically so we add `(classes = StarzzBootApplication.class)` to specify what the main class is.
 
 The other classes in the `integration` package follow a similar logic.
 
+For security of our system, only registered users should be allowed to make any changes to our data.  We enforce this by requiring users to log in to our system using their username and password.  Currently though, user's passwords are saved as-is in our database.  This is not desirable.  In the next chapter, we create a new endpoint that would allow users to change their passwords and save their paswords more securely.
+
 </details>
 
-## Conclusion
+### Chapter 6: Setting up password hashing
 
-**starzz-boot** demonstrates a complete, production-style Spring Boot REST API built incrementally — from setting up routes and wiring in a MySQL database, to layering in DTO mapping, validation, and global exception handling, to covering the application with unit tests at the service and controller layers, and finally verifying the full request lifecycle with integration tests backed by an in-memory H2 database.  Each chapter builds on the last, reflecting how a real backend evolves in practice.
+Project dependencies added:
+
+    Spring Security Crypto
+
+#### Overview
+
+#### User Resets Password
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User
+    participant Application
+    participant Database
+
+    User ->> Application: **PATCH** /users/<id>/change-password<br/>{"oldPassword": "resetRequired",<br/>"newPassword": <new password>}
+    Application ->> Database: Query user data with<br/>**userId**=<id>
+    Database ->> Application: User data
+    Application ->> Application: Verify that **password**=hash("resetRequired")
+    Application ->> Database: Update user data with<br/>**password**=hash(<new password>)
+    Database ->> Application: Result
+    Application ->> User: HTTP Response
+```
+
+#### User Changes Password
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User
+    participant Application
+    participant Database
+
+    User ->> Application: **PATCH** /users/<id>/change-password<br/>{"oldPassword": <old password>,<br/>"newPassword": <new password>}
+    Application ->> Database: Query user data with<br/>**userId**=<id>
+    Database ->> Application: User data
+    Application ->> Application: Verify that **password**=hash(<old password>)
+    Application ->> Database: Update user data with<br/>**password**=hash(<new password>)
+    Database ->> Application: Result
+    Application ->> User: HTTP Response
+```
+
+#### New Endpoint
+
+| Endpoint                        | Method | Description                                              | Response       |
+|---------------------------------|--------|----------------------------------------------------------|----------------|
+| `/users/{id}/change-password`   | PATCH  | Updates the user's password                              | 204 No Content |
+
+*The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to include this new endpoint.*
+
+<details>
+
+<summary>Chapter Walkthrough</summary>
+
+Whenever users are registered to our application, they are assigned the default password **resetRequired**; we will henceforth be referring to this value as the *sentinel*.
+The sentinel is a reminder that before a user can fully use our application, he has to change his password first.  We thus need to provide the user with some way to change his password without needing to manually update the database.
+
+Another use case for the "change password" functionality is to allow users to periodically update their passwords, which is a good security practice.  
+
+The above use cases can be satisfied by creating a new endpoint, `/users/{id}/change-password`; the user can then provide his existing password and nominate a new one.  The application then verifies that the user's existing password is the same as the one that the user just supplied, and if so, proceeds to update the user's password to the new password.  If the user is instead requesting a password reset, the user explicitly supplies the sentinel as the old password.
+
+Note however that this solution is not secure.  Our application saves passwords to the database as-is i.e. if a user's password is *abcd1234*, it is written to the database as *abcd1234*.  Anyone with access to the database can see all the users' passwords.  To prevent this, we would need some way to save passwords in encrypted form.
+
+This is where **Spring Security Crypto** comes in.  With it, we can save hashes of passwords instead of actual passwords.  A hash is the result of passing some input through a hash function.  A hash function is a one-way function i.e. given the result of the function, we cannot figure out what the input to the function was.  This can be used for passwords.
+
+This is how hashing will help us.  Any password that is to be saved to the database is first passed to a hash function.  The hash, not the actual password, is the user's password saved to the database.  The hash is effectively the encrypted form of the password.  Even if someone manages to read this value, there is no way to decrypt the value and derive the original password.
+
+There are several hashing algorithms; BCrypt is the recommended algorithm, and this is what we will use for our application.  BCrypt is a salted hash function, meaning the same input produces a different hash each time.  A password's hashes taken at different times will be different.  
+
+So to determine whether a password change should proceed, we use BCrypt's `matches()` method, which internally handles the salt comparison.  Since we cannot simply hash the supplied password and compare it directly against the saved hash, we use `matches()` to extract the salt from the saved hash.  The method then uses the extracted salt to verify the supplied password.  If the verification succeeds, we can say that the supplied password matches the user's actual password, and we allow the change operation to continue.
+
+To use **Spring Security Crypto** we need to add the dependency to our project:
+
+```xml
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-crypto</artifactId>
+</dependency>
+```
+
+Right now, the sentinel value is hardcoded in `com.sanjayrisbud.starzzboot.services.UserService`.  We may want to use this value elsewhere.  We can hardcode the value in those places too, but a better approach would be to configure the value in `application.yaml` so that it is defined in one place and can be changed without modifying code.  In the places that need the value, code can just refer to the configuration.
+
+We add these lines to `src/main/resources/application.yaml`:
+
+```yaml
+app:
+  security:
+    password-reset-sentinel: resetRequired
+```
+
+We then modify code in `com.sanjayrisbud.starzzboot.services.UserService` to read the sentinel value:
+
+```java
+    ...
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+
+    @Value("${app.security.password-reset-sentinel}")
+    private String passwordResetSentinel;
+    ...
+```
+
+Here, Spring uses field injection on `passwordResetSentinel` so we cannot set it as `final`.
+
+When we execute our tests, we see that they have broken.  There are 3 issues:
+
+- Unit tests don't load application context and so cannot read from a configuration file.  Tests that call instances of `com.sanjayrisbud.starzzboot.services.UserService` must set `passwordResetSentinel`.  However, this field is `private` so we have to set the field using Java's Reflection API.  In `src/test/java/com/sanjayrisbud/starzzboot/services/UserServiceTest.java`, we add this before our tests:
+
+```java
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(userService, "passwordResetSentinel", "resetRequired");
+    }
+```
+
+`@BeforeEach` specifies that the method should run before each test in the class executes.
+
+- Integration tests load the full application context.  So when `com.sanjayrisbud.starzzboot.services.UserService` is tested, it will read the configuration file for the sentinel value.  Since tests use `src/test/resources/application.yaml`, we need to add these lines too:
+
+```yaml
+app:
+  security:
+    password-reset-sentinel: resetRequired
+```
+
+- Also in integration tests, when the application context is loaded, `com.sanjayrisbud.starzzboot.services.UserService` cannot be properly instantiated (this will also occur in production; fortunately our test caught it).  It is because of `@AllArgsConstructor`.  Lombok generated a constructor with all fields as parameters. So the generated constructor looks like:
+
+```java
+    public UserService(UserRepository userRepository, UserMapper userMapper, String passwordResetSentinel) { ... }
+```
+
+Spring sees this constructor and tries to autowire all three parameters. For `userRepository` and `userMapper` it found matching beans. But for `passwordResetSentinel`, it couldn't find a bean of type `String` and failed.  Even though `@Value` was on the field, Spring isn't able to process it.  Spring does constructor injection before field injection.
+
+We can fix this by removing `@AllArgsConstructor` and creating our own constructor.  This constructor would still ask Spring to inject `userRepository` and `userMapper` but instead of injecting a bean for `passwordResetSentinel`, we inject a property from the configuration file, which Spring had already read.  We change the code we wrote earlier to:
+
+```java
+    ...
+    @Service
+    public class UserService {
+        private final UserRepository userRepository;
+        private final UserMapper userMapper;
+        private final String passwordResetSentinel;
+
+        public UserService(UserRepository userRepository, UserMapper userMapper,
+                        @Value("${app.security.password-reset-sentinel}") String passwordResetSentinel) {
+            this.userRepository = userRepository;
+            this.userMapper = userMapper;
+            this.passwordResetSentinel = passwordResetSentinel;
+        }
+    ...
+```
+
+The code is getting the property `app.security.password-reset-sentinel` from `application.yaml`.
+
+We now write the code to hash passwords.
+
+</details>

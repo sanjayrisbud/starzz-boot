@@ -7,6 +7,7 @@ import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.mappers.UserMapper;
 import com.sanjayrisbud.starzzboot.models.User;
 import com.sanjayrisbud.starzzboot.repositories.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,6 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static com.sanjayrisbud.starzzboot.helpers.DtoFactory.*;
 import static com.sanjayrisbud.starzzboot.helpers.EntityFactory.*;
@@ -32,6 +35,11 @@ class UserServiceTest {
     private UserRepository userRepository;
     @InjectMocks
     private UserService userService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(userService, "passwordResetSentinel", "resetRequired");
+    }
 
     @Test
     void getEntityGivenNewIdIsNullReturnsNull() {

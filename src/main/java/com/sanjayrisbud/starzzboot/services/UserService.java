@@ -7,16 +7,23 @@ import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.mappers.UserMapper;
 import com.sanjayrisbud.starzzboot.models.User;
 import com.sanjayrisbud.starzzboot.repositories.UserRepository;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@AllArgsConstructor
 @Service
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final String passwordResetSentinel;
+
+    public UserService(UserRepository userRepository, UserMapper userMapper,
+                       @Value("${app.security.password-reset-sentinel}") String passwordResetSentinel) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+        this.passwordResetSentinel = passwordResetSentinel;
+    }
 
     public List<UserSummaryDto> getUserList() {
         return userRepository.findAll().stream()
@@ -35,7 +42,7 @@ public class UserService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .dateOfBirth(request.getDateOfBirth())
-                .password("resetRequired")
+                .password(passwordResetSentinel)
                 .build();
         userRepository.save(user);
         return userMapper.toDetailsDto(user);
