@@ -8,6 +8,7 @@ import com.sanjayrisbud.starzzboot.mappers.UserMapper;
 import com.sanjayrisbud.starzzboot.models.User;
 import com.sanjayrisbud.starzzboot.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,12 +17,14 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
     private final String passwordResetSentinel;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper,
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder,
                        @Value("${app.security.password-reset-sentinel}") String passwordResetSentinel) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
         this.passwordResetSentinel = passwordResetSentinel;
     }
 
@@ -42,7 +45,7 @@ public class UserService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .dateOfBirth(request.getDateOfBirth())
-                .password(passwordResetSentinel)
+                .password(passwordEncoder.encode(passwordResetSentinel))
                 .build();
         userRepository.save(user);
         return userMapper.toDetailsDto(user);

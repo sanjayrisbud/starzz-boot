@@ -3,11 +3,16 @@ package com.sanjayrisbud.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sanjayrisbud.starzzboot.StarzzBootApplication;
 import com.sanjayrisbud.starzzboot.dtos.UserDto;
+import com.sanjayrisbud.starzzboot.models.User;
+import com.sanjayrisbud.starzzboot.repositories.UserRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +28,15 @@ class UserControllerIT {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Value("${app.security.password-reset-sentinel}")
+    private String passwordResetSentinel;
 
     @Test
     void getUserListReturns200AndList() throws Exception {
@@ -48,8 +62,10 @@ class UserControllerIT {
     @Test
     @Transactional
     void registerUserGivenValidDataReturns201AndUser() throws Exception {
+        String newUsername = "testuser12345";
         UserDto request = UserDto.builder()
-                .username("testuser12345")
+                .username(newUsername)
+                .email("test@email.com")
                 .build();
 
         mockMvc.perform(post("/users")
@@ -57,7 +73,11 @@ class UserControllerIT {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.userId").isNotEmpty())
-                .andExpect(jsonPath("$.username").value("testuser12345"));
+                .andExpect(jsonPath("$.username").value(newUsername));
+
+        User u = userRepository.findByName(newUsername);
+        Assertions.assertTrue(passwordEncoder.matches(
+                passwordResetSentinel, u.getPassword()));
     }
 
     @Test
@@ -65,6 +85,7 @@ class UserControllerIT {
     void updateUserGivenExistingIdReturns200AndUpdatedUser() throws Exception {
         UserDto request = UserDto.builder()
                 .username("updateduser12345")
+                .email("updated@email.com")
                 .build();
 
         mockMvc.perform(put("/users/1")

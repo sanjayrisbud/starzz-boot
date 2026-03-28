@@ -253,7 +253,6 @@ One of the auto-generated files in our project is `StarzzBootApplication.java` i
 `com.sanjayrisbud.starzzboot`:
 
 ```java
-    ... 
     @SpringBootApplication
     public class StarzzBootApplication {
 
@@ -300,7 +299,6 @@ respond accordingly.  In package `com.sanjayrisbud.starzzboot` we add a new pack
 A sample class in the `controllers` package is `ConstellationController`:
 
 ```java
-    ...
     @RestController
     @RequestMapping("/constellations")
     public class ConstellationController {
@@ -318,7 +316,7 @@ A sample class in the `controllers` package is `ConstellationController`:
         public Message registerConstellation(@RequestBody Message request) {
             return new Message("Successfully called registerConstellation(" + request + ")");
         }
-    ...
+    // ...
 ```
 
 We annotate the class with `@RestController`, which marks the class as a controller where every
@@ -704,7 +702,6 @@ we add a new package, `models`, to contain the table abstractions.  An example c
 `Constellation`:
 
 ```java
-    ...
     @Entity
     @AllArgsConstructor
     @NoArgsConstructor
@@ -720,7 +717,7 @@ we add a new package, `models`, to contain the table abstractions.  An example c
 
         @Column(name = "constellation_name")
         private String name;
-    ...
+    // ...
 ```
 
 The `@Entity` annotation specifies that the class is an abstraction of a database table, and
@@ -740,11 +737,9 @@ between `constellations` and `galaxies`; the foreign key is `galaxy_id`  We expr
 using:
 
 ```java
-    ...
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "galaxy_id")
     private Galaxy galaxy;
-    ...
 ```
 
 Our entity for the `galaxies` table is `Galaxy`; we define a field `galaxy` to refer to it.  Since
@@ -771,7 +766,6 @@ constellations.
 Two other fields in `Constellation` are defined similarly:
 
 ```java
-    ...
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "added_by")
     private User addedBy;
@@ -779,7 +773,6 @@ Two other fields in `Constellation` are defined similarly:
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verified_by")
     private User verifiedBy;
-    ...
 ```
 
 The symmetric fields in the `User` entity corresponding to the table `users`:
@@ -807,7 +800,6 @@ In `com.sanjayrisbud.starzzboot`, we add a new package, `repositories`, to conta
 An example interface is`ConstellationRepository`:
 
 ```java
-    ...
     public interface ConstellationRepository extends JpaRepository<Constellation, Integer> {
     }
 ```
@@ -820,7 +812,6 @@ custom objects are known as data transfer objects.  We need to create DTOs for o
 In `com.sanjayrisbud.starzzboot.dtos`, we add our DTOs.  An example class is `ConstellationSummaryDto`:
 
 ```java
-    ...
     public record ConstellationSummaryDto (
         Integer constellationId,
         String constellationName
@@ -834,7 +825,6 @@ data carrier.
 Another example is `ConstellationDetailsDto`:
 
 ```java
-    ...
     @Builder
     @Data
     @JsonPropertyOrder({
@@ -886,7 +876,6 @@ In `com.sanjayrisbud.starzzboot`, we add a new package, `mappers`, to contain th
 our entity mappers.  An example class is `ConstellationMapper`:
 
 ```java
-    ...
     @AllArgsConstructor
     @Component
     public class ConstellationMapper {
@@ -932,7 +921,6 @@ information about these events.  We do this with exception handling.  In package
 error message:
 
 ```java
-    ...
     public record ErrorResponseDto(
         String message,
         LocalDateTime timestamp
@@ -945,7 +933,6 @@ In `com.sanjayrisbud.starzzboot`, we add a new package, `exceptions`, to contain
 for our exception handling.  We create class `ResourceNotFoundException`:
 
 ```java
-    ...
     @Getter
     public class ResourceNotFoundException extends RuntimeException {
     
@@ -967,7 +954,6 @@ resources.
 In the same package, we create class `GlobalExceptionHandler`:
 
 ```java
-    ...
     @RestControllerAdvice
     public class GlobalExceptionHandler {
     
@@ -979,7 +965,6 @@ In the same package, we create class `GlobalExceptionHandler`:
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
     }
-    ...
 ```
 
 The `@RestControllerAdvice` annotation makes this class handle all our custom exceptions.
@@ -995,7 +980,6 @@ In `com.sanjayrisbud.starzzboot`, we add a new package, `services`, to contain t
 service layer.  An example class is `ConstellationService`:
 
 ```java
-    ...
     @AllArgsConstructor
     @Service
     public class ConstellationService {
@@ -1025,7 +1009,7 @@ service layer.  An example class is `ConstellationService`:
             constellationRepository.save(constellation);
             return constellationMapper.toDetailsDto(constellation);
         }
-    ...
+    // ...
 ```
 
 `@Service` specifies that this class is a bean.  It has private fields for beans, which were
@@ -1036,7 +1020,6 @@ The other classes in the `services` package follow a similar logic.
 Finally, we rewrite our `ConstellationController`:
 
 ```java
-    ...
     @AllArgsConstructor
     @RestController
     @RequestMapping("/constellations")
@@ -1063,7 +1046,7 @@ Finally, we rewrite our `ConstellationController`:
                     .buildAndExpand(newConstellation.getConstellationId()).toUri();
             return ResponseEntity.created(uri).body(newConstellation);
         }
-    ...
+    // ...
 ```
 
 We introduce a private field for the service bean.  When the endpoint handlers receive requests,
@@ -1147,7 +1130,6 @@ We now set up our in-memory database.
 Open `src/test/java/com/sanjayrisbud/starzzboot/StarzzBootApplicationTests.java`.  This is a starter test file automatically created by IntelliJ.  
 
 ```java
-    ...
     @SpringBootTest
     class StarzzBootApplicationTests {
 
@@ -1266,7 +1248,6 @@ We start with writing unit tests for our services.  In package `com.sanjayrisbud
 we create class `ConstellationServiceTest` to contain our unit tests for `ConstellationService`:
 
 ```java
-    ...
     @ExtendWith(MockitoExtension.class)
     class ConstellationServiceTest {
         private final UserMapper userMapper = new UserMapper();
@@ -1304,7 +1285,7 @@ we create class `ConstellationServiceTest` to contain our unit tests for `Conste
     
             assertEquals(existingConstellation, c);
         }
-    ...
+    // ...
 ```
 
 To test `ConstellationService`, we create an instance of it.  Since it depends on other classes,
@@ -1349,7 +1330,6 @@ We now write unit tests for our controllers.  In package `com.sanjayrisbud.starz
 we create class `ConstellationControllerTest` to contain our unit tests for `ConstellationController`:
 
 ```java
-    ...
     @WebMvcTest(ConstellationController.class)
     class ConstellationControllerTest {
 
@@ -1393,8 +1373,7 @@ we create class `ConstellationControllerTest` to contain our unit tests for `Con
         mockMvc.perform(get("/constellations/" + nonExistentId))
                 .andExpect(status().isNotFound());
     }
-
-    ...
+    // ...
 ```
 
 In the previous chapter, we briefly encountered `@SpringBootTest` and mentioned that it loads the full application context. For controller tests, we don't need the full context — we only care about the web layer.  `@WebMvcTest` loads the web layer — controllers, exception handlers, filters, and other web-related beans — without starting a real server or connecting to a database.  We specify the controller class (in this case, `ConstellationController`) so that only that controller is loaded, rather than all controllers in the application.  However, service dependencies are not part of the web layer and are not autoloaded, so we must provide mock instances of these dependencies.
@@ -1466,7 +1445,6 @@ We use integration tests to check that all the components that we have coded wor
 We revisit `src/test/java/com/sanjayrisbud/starzzboot/StarzzBootApplicationTests.java`:
 
 ```java
-    ...
     @SpringBootTest
     class StarzzBootApplicationTests {
 
@@ -1521,7 +1499,6 @@ In `sql.init` we specify that the seed script should always run. `mode: always` 
 We create package `com.sanjayrisbud.integration` to contain our integration tests.  We create class `ConstellationControllerIT` to contain the integration tests for `ConstellationController`:
 
 ```java
-    ...
     @SpringBootTest(classes = StarzzBootApplication.class)
     @AutoConfigureMockMvc
     class ConstellationControllerIT {
@@ -1552,7 +1529,7 @@ We create package `com.sanjayrisbud.integration` to contain our integration test
             mockMvc.perform(get("/constellations/9999"))
                     .andExpect(status().isNotFound());
         }
-    ...
+    // ...
 ```
 
 As discussed, `@SpringBootTest` is used to load the application context.  This annotation tells Spring Boot to search for the main class in the current package and in parent packages.  However since the main class is in `com.sanjayrisbud.starzzboot` i.e. a sibling package, Spring Boot won't be able to find it automatically so we add `(classes = StarzzBootApplication.class)` to specify what the main class is.
@@ -1660,16 +1637,33 @@ app:
 We then modify code in `com.sanjayrisbud.starzzboot.services.UserService` to read the sentinel value:
 
 ```java
-    ...
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
     @Value("${app.security.password-reset-sentinel}")
     private String passwordResetSentinel;
-    ...
 ```
 
 Here, Spring uses field injection on `passwordResetSentinel` so we cannot set it as `final`.
+
+We modify `registerUser()`:
+
+```java
+    public UserDetailsDto registerUser(UserDto request) {
+        var user = User.builder()
+                .name(request.getUsername())
+                .email(request.getEmail())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .dateOfBirth(request.getDateOfBirth())
+                .password(passwordResetSentinel)
+                .build();
+        userRepository.save(user);
+        return userMapper.toDetailsDto(user);
+    }
+```
+
+Instead of hardcoding the sentinel value for the pasword, we use `passwordResetSentinel`.
 
 When we execute our tests, we see that they have broken.  There are 3 issues:
 
@@ -1695,15 +1689,15 @@ app:
 - Also in integration tests, when the application context is loaded, `com.sanjayrisbud.starzzboot.services.UserService` cannot be properly instantiated (this will also occur in production; fortunately our test caught it).  It is because of `@AllArgsConstructor`.  Lombok generated a constructor with all fields as parameters. So the generated constructor looks like:
 
 ```java
-    public UserService(UserRepository userRepository, UserMapper userMapper, String passwordResetSentinel) { ... }
+    public UserService(UserRepository userRepository, UserMapper userMapper, String passwordResetSentinel) { 
+    // ...
 ```
 
 Spring sees this constructor and tries to autowire all three parameters. For `userRepository` and `userMapper` it found matching beans. But for `passwordResetSentinel`, it couldn't find a bean of type `String` and failed.  Even though `@Value` was on the field, Spring isn't able to process it.  Spring does constructor injection before field injection.
 
-We can fix this by removing `@AllArgsConstructor` and creating our own constructor.  This constructor would still ask Spring to inject `userRepository` and `userMapper` but instead of injecting a bean for `passwordResetSentinel`, we inject a property from the configuration file, which Spring had already read.  We change the code we wrote earlier to:
+We can fix this by removing `@AllArgsConstructor` and creating our own constructor.  This constructor would still ask Spring to inject `userRepository` and `userMapper` but instead of injecting a bean for `passwordResetSentinel`, we inject a property from the configuration file, which Spring had already read.  We change the injection code we wrote earlier to:
 
 ```java
-    ...
     @Service
     public class UserService {
         private final UserRepository userRepository;
@@ -1716,11 +1710,136 @@ We can fix this by removing `@AllArgsConstructor` and creating our own construct
             this.userMapper = userMapper;
             this.passwordResetSentinel = passwordResetSentinel;
         }
-    ...
+    // ...
 ```
 
 The code is getting the property `app.security.password-reset-sentinel` from `application.yaml`.
 
 We now write the code to hash passwords.
+
+We create a new package `com.sanjayrisbud.starzzboot.config` to contain classes related to application configuration.  In this package, we create a class `SecurityConfig`:
+
+```java
+    @Configuration
+    public class SecurityConfig {
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+            return new BCryptPasswordEncoder();
+        }
+    }
+```
+
+`@Configuration`  tells Spring that this class contains bean definitions. Spring scans for it at startup and processes all `@Bean` methods inside it, registering the returned objects as beans in the application context.
+
+We modify `com.sanjayrisbud.starzzboot.services.UserService`.
+
+```java
+    @Service
+    public class UserService {
+        private final UserRepository userRepository;
+        private final UserMapper userMapper;
+        private final PasswordEncoder passwordEncoder;
+        private final String passwordResetSentinel;
+```
+
+We add a field for `passwordEncoder` to hold the hashing bean.
+
+```java
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder,
+                       @Value("${app.security.password-reset-sentinel}") String passwordResetSentinel) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.passwordResetSentinel = passwordResetSentinel;
+    }
+```
+
+In the constructor, we ask Spring to inject the bean of type `PasswordEncoder` into the new field.
+
+```java
+    public UserDetailsDto registerUser(UserDto request) {
+        var user = User.builder()
+                .name(request.getUsername())
+                .email(request.getEmail())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .dateOfBirth(request.getDateOfBirth())
+                .password(passwordEncoder.encode(passwordResetSentinel))
+                .build();
+        userRepository.save(user);
+        return userMapper.toDetailsDto(user);
+    }
+```
+
+We modify `registerUser()` so that `passwordResetSentinel` is hashed using `passwordEncoder.encode()` before setting it as the password.
+
+We run our tests and discover that `UserServiceTest` broke again.  This is because we had added a new bean in `UserService`, and in `UserServiceTest` **Mockito** cannot instantiate `UserService` anymore. We simply modify `src/test/java/com/sanjayrisbud/starzzboot/services/UserServiceTest.java`:
+
+```java
+    @ExtendWith(MockitoExtension.class)
+    class UserServiceTest {
+        @Spy
+        private final UserMapper userMapper = new UserMapper();
+
+        @Mock
+        private UserRepository userRepository;
+        @Mock
+        private PasswordEncoder passwordEncoder;
+        @InjectMocks
+        private UserService userService;
+```
+
+We add another `@Mock` for `passwordEncoder`.
+
+It's also a good idea to create a test to verify that the password of the registered user is the hash of the sentinel value.  We modify `src/test/java/com/sanjayrisbud/integration/UserControllerIT.java`:
+
+```java
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Value("${app.security.password-reset-sentinel}")
+    private String passwordResetSentinel;
+```
+
+We ask Spring to inject beans of type `PasswordEncoder` and `UserRepository` and the value `app.security.password-reset-sentinel` from `application.yaml`.
+
+```java
+    @Test
+    @Transactional
+    void registerUserGivenValidDataReturns201AndUser() throws Exception {
+        String newUsername = "testuser12345";
+        UserDto request = UserDto.builder()
+                .username(newUsername)
+                .email("test@email.com")
+                .build();
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userId").isNotEmpty())
+                .andExpect(jsonPath("$.username").value(newUsername));
+
+        User u = userRepository.findByName(newUsername);
+        Assertions.assertTrue(passwordEncoder.matches(
+                passwordResetSentinel, u.getPassword()));
+    }
+```
+
+We then test the password.  We add code to retrieve the user that was just added to the `users` table and assert that the hashing bean successfully matches the sentinel value and the user's password.
+
+We also need to define `findByName()`.  In `com.sanjayrisbud.starzzboot.repositories.UserRepository`.  we have:
+
+```java
+    public interface UserRepository extends JpaRepository<User, Integer> {
+        User findByName(String s);
+    }
+```
+
+The field `name` in the `User` entity contains the username, so we can just declare `findByName()` in the repository interface and Spring Data JPA can generate the method automatically.  
 
 </details>

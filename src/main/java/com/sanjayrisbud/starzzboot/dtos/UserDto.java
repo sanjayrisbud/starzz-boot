@@ -1,5 +1,6 @@
 package com.sanjayrisbud.starzzboot.dtos;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +9,7 @@ import lombok.Data;
 @Data
 public class UserDto {
     @NotBlank private String username;
-    private String email;
+    @NotBlank @Email private String email;
     private String firstName;
     private String lastName;
     private String dateOfBirth;
