@@ -42,4 +42,10 @@ public class UserController {
         return ResponseEntity.ok(existingUser);
     }
 
+    @PatchMapping("/{id}/change-password")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable Integer id, @Valid @RequestBody  ChangePasswordDto request) {
+        userService.changePassword(id, request);
+        return ResponseEntity.noContent().build();
+    }
 }

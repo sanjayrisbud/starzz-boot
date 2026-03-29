@@ -1,5 +1,6 @@
 package com.sanjayrisbud.starzzboot.services;
 
+import com.sanjayrisbud.starzzboot.dtos.ChangePasswordDto;
 import com.sanjayrisbud.starzzboot.dtos.UserDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.UserDto;
 import com.sanjayrisbud.starzzboot.dtos.UserSummaryDto;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.InputMismatchException;
 import java.util.List;
 
 @Service
@@ -62,6 +64,16 @@ public class UserService {
 
         userRepository.save(currentUser);
         return userMapper.toDetailsDto(currentUser);
+    }
+
+    public void changePassword(Integer id, ChangePasswordDto request) {
+        var currentUser = findById(id);
+        if (!passwordEncoder.matches(request.getExistingPassword(),
+                currentUser.getPassword())) {
+            throw new InputMismatchException("Passwords don't match.");
+        }
+        currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
     }
 
     public User getEntity(Integer newId, User existingUser) {

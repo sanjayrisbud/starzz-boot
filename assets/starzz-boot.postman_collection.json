@@ -1,11 +1,152 @@
 {
   "info": {
-    "_postman_id": "8e96aa1a-229f-4f1f-9ac7-378d81f16993",
+    "_postman_id": "22b23ae3-19a9-4473-a3a2-4c3756343af8",
     "name": "starzz-boot",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "46429602"
   },
   "item": [
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:{{port}}/users",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Register User",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\": \"stark29128\",\r\n    \"email\": \"eliot.balducci@aol.com\",\r\n    \"firstName\": \"Bruce\",\r\n    \"lastName\": \"Stark\",\r\n    \"dateOfBirth\": \"1993-08-24\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://127.0.0.1:{{port}}/users",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Retrieve User",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:{{port}}/users/1",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "users",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\": \"stark29128\",\r\n    \"email\": \"eliot.balducci@aol.com\",\r\n    \"firstName\": \"Stephen\",\r\n    \"lastName\": \"Stark\",\r\n    \"dateOfBirth\": \"1993-08-24\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://127.0.0.1:{{port}}/users/101",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "users",
+            "101"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Change Password",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"existingPassword\": \"resetRequired\",\r\n    \"newPassword\": \"stark29128\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://127.0.0.1:{{port}}/users/101/change-password",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "users",
+            "101",
+            "change-password"
+          ]
+        }
+      },
+      "response": []
+    },
     {
       "name": "List Constellations",
       "request": {
@@ -393,114 +534,6 @@
           "port": "{{port}}",
           "path": [
             "stars",
-            "101"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "List Users",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://127.0.0.1:{{port}}/users",
-          "protocol": "http",
-          "host": [
-            "127",
-            "0",
-            "0",
-            "1"
-          ],
-          "port": "{{port}}",
-          "path": [
-            "users"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Register User",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n    \"username\": \"stark29128\",\r\n    \"email\": \"eliot.balducci@aol.com\",\r\n    \"firstName\": \"Bruce\",\r\n    \"lastName\": \"Stark\",\r\n    \"dateOfBirth\": \"1993-08-24\"\r\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://127.0.0.1:{{port}}/users",
-          "protocol": "http",
-          "host": [
-            "127",
-            "0",
-            "0",
-            "1"
-          ],
-          "port": "{{port}}",
-          "path": [
-            "users"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Retrieve User",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://127.0.0.1:{{port}}/users/1",
-          "protocol": "http",
-          "host": [
-            "127",
-            "0",
-            "0",
-            "1"
-          ],
-          "port": "{{port}}",
-          "path": [
-            "users",
-            "1"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Update User",
-      "request": {
-        "method": "PUT",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n    \"username\": \"stark29128\",\r\n    \"email\": \"eliot.balducci@aol.com\",\r\n    \"firstName\": \"Stephen\",\r\n    \"lastName\": \"Stark\",\r\n    \"dateOfBirth\": \"1993-08-24\"\r\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://127.0.0.1:{{port}}/users/101",
-          "protocol": "http",
-          "host": [
-            "127",
-            "0",
-            "0",
-            "1"
-          ],
-          "port": "{{port}}",
-          "path": [
-            "users",
             "101"
           ]
         }

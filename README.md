@@ -306,17 +306,18 @@ A sample class in the `controllers` package is `ConstellationController`:
         public Message getConstellationList() {
             return new Message("Successfully called getConstellationList()");
         }
-
+    
         @GetMapping("/{id}")
         public Message getConstellation(@PathVariable Long id) {
             return new Message("Successfully called getConstellation(" + id + ")");
         }
-
+    
         @PostMapping
         public Message registerConstellation(@RequestBody Message request) {
             return new Message("Successfully called registerConstellation(" + request + ")");
         }
-    // ...
+        // ...
+    }
 ```
 
 We annotate the class with `@RestController`, which marks the class as a controller where every
@@ -714,10 +715,11 @@ we add a new package, `models`, to contain the table abstractions.  An example c
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "constellation_id")
         private Integer id;
-
+    
         @Column(name = "constellation_name")
         private String name;
-    // ...
+        // ...
+    }
 ```
 
 The `@Entity` annotation specifies that the class is an abstraction of a database table, and
@@ -987,7 +989,7 @@ service layer.  An example class is `ConstellationService`:
         private final ConstellationMapper constellationMapper;
         private final GalaxyService galaxyService;
         private final UserService userService;
-        
+    
         public List<ConstellationSummaryDto> getConstellationList() {
             return constellationRepository.findAll().stream()
                     .map(constellationMapper::toSummaryDto)
@@ -1003,13 +1005,14 @@ service layer.  An example class is `ConstellationService`:
                     .name(request.getConstellationName())
                     .galaxy(galaxyService.getEntity(request.getGalaxyId(), null))
                     .addedBy(userService.getEntity(request.getAdderId(), null))
-                    .verifiedBy(userService.getEntity(request.getVerifierId(),null))
+                    .verifiedBy(userService.getEntity(request.getVerifierId(), null))
                     .build();
     
             constellationRepository.save(constellation);
             return constellationMapper.toDetailsDto(constellation);
         }
-    // ...
+        // ...
+    }
 ```
 
 `@Service` specifies that this class is a bean.  It has private fields for beans, which were
@@ -1046,7 +1049,8 @@ Finally, we rewrite our `ConstellationController`:
                     .buildAndExpand(newConstellation.getConstellationId()).toUri();
             return ResponseEntity.created(uri).body(newConstellation);
         }
-    // ...
+        // ...
+    }
 ```
 
 We introduce a private field for the service bean.  When the endpoint handlers receive requests,
@@ -1255,7 +1259,7 @@ we create class `ConstellationServiceTest` to contain our unit tests for `Conste
         @Spy
         private final ConstellationMapper constellationMapper =
                 new ConstellationMapper(galaxyMapper, userMapper);
-
+    
         @Mock
         private ConstellationRepository constellationRepository;
         @Mock
@@ -1281,11 +1285,12 @@ we create class `ConstellationServiceTest` to contain our unit tests for `Conste
             when(constellationRepository.findById(1))
                     .thenReturn(Optional.of(existingConstellation));
     
-            Constellation c = constellationService.getEntity(1,null);
+            Constellation c = constellationService.getEntity(1, null);
     
             assertEquals(existingConstellation, c);
         }
-    // ...
+        // ...
+    }
 ```
 
 To test `ConstellationService`, we create an instance of it.  Since it depends on other classes,
@@ -1332,53 +1337,53 @@ we create class `ConstellationControllerTest` to contain our unit tests for `Con
 ```java
     @WebMvcTest(ConstellationController.class)
     class ConstellationControllerTest {
-
         @Autowired
         private MockMvc mockMvc;
-
+    
         @Autowired
         private ObjectMapper objectMapper;
-
+    
         @MockitoBean
         private ConstellationService constellationService;
-
+    
         @Test
         void getConstellationListReturns200WithEmptyList() throws Exception {
             when(constellationService.getConstellationList()).thenReturn(List.of());
-
+    
             mockMvc.perform(get("/constellations"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(0));
         }
-
-    @Test
-    void getConstellationGivenExistingIdReturns200AndConstellation() throws Exception {
-        Constellation c = buildConstellation();
-        ConstellationDetailsDto dto = buildConstellationDetailsDto(c);
-
-        when(constellationService.getConstellation(c.getId())).thenReturn(dto);
-
-        mockMvc.perform(get("/constellations/" + c.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.constellationId").value(c.getId()));
+    
+        @Test
+        void getConstellationGivenExistingIdReturns200AndConstellation() throws Exception {
+            Constellation c = buildConstellation();
+            ConstellationDetailsDto dto = buildConstellationDetailsDto(c);
+    
+            when(constellationService.getConstellation(c.getId())).thenReturn(dto);
+    
+            mockMvc.perform(get("/constellations/" + c.getId()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.constellationId").value(c.getId()));
+        }
+    
+        @Test
+        void getConstellationGivenNonExistentIdReturns404AndError() throws Exception {
+            Integer nonExistentId = 999;
+    
+            when(constellationService.getConstellation(nonExistentId))
+                    .thenThrow(new ResourceNotFoundException("Constellation", nonExistentId));
+    
+            mockMvc.perform(get("/constellations/" + nonExistentId))
+                    .andExpect(status().isNotFound());
+        }
+        // ...
     }
-
-    @Test
-    void getConstellationGivenNonExistentIdReturns404AndError() throws Exception {
-        Integer nonExistentId = 999;
-
-        when(constellationService.getConstellation(nonExistentId))
-                .thenThrow(new ResourceNotFoundException("Constellation", nonExistentId));
-
-        mockMvc.perform(get("/constellations/" + nonExistentId))
-                .andExpect(status().isNotFound());
-    }
-    // ...
 ```
 
 In the previous chapter, we briefly encountered `@SpringBootTest` and mentioned that it loads the full application context. For controller tests, we don't need the full context — we only care about the web layer.  `@WebMvcTest` loads the web layer — controllers, exception handlers, filters, and other web-related beans — without starting a real server or connecting to a database.  We specify the controller class (in this case, `ConstellationController`) so that only that controller is loaded, rather than all controllers in the application.  However, service dependencies are not part of the web layer and are not autoloaded, so we must provide mock instances of these dependencies.
 
-Since `ConstellationController` has a dependency on `ConstellationService`, we declare a mock instance of it using `@MockitoBean`.  `MockMvc` is the actual class that allows us to generate mock HTTP calls, while `ObjectMapper` serializes Java objects to JSON strings for use as request bodies in POST and PUT tests — this is necessary because MockMvc's `.content()` method expects a `String`, not a Java object.  We declare instances of both classes as beans and annotate them with `@Autowired`.  When a `ConstellationControllerTest` instance is later initialized for executing tests, all three beans are automatically injected into the instance.
+Since `ConstellationController` has a dependency on `ConstellationService`, we declare a mock instance of it using `@MockitoBean`.  `MockMvc` is the actual class that allows us to generate mock HTTP calls.  `ObjectMapper` serializes Java objects to JSON strings for use as request bodies in POST and PUT tests — this is necessary because MockMvc's `.content()` method expects a `String`, not a Java object.  We declare instances of both classes as beans and annotate them with `@Autowired`.  When a `ConstellationControllerTest` instance is later initialized for executing tests, all three beans are automatically injected into the instance.
 
 > **Note:** In service tests, Mockito injects dependencies via constructor injection. In controller tests, Spring manages the beans and are injected via field injection. Different test types, different frameworks for wiring.
 
@@ -1502,20 +1507,20 @@ We create package `com.sanjayrisbud.integration` to contain our integration test
     @SpringBootTest(classes = StarzzBootApplication.class)
     @AutoConfigureMockMvc
     class ConstellationControllerIT {
-
+    
         @Autowired
         private MockMvc mockMvc;
-
+    
         @Autowired
         private ObjectMapper objectMapper;
-
+    
         @Test
         void getConstellationListReturns200AndList() throws Exception {
             mockMvc.perform(get("/constellations"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(100));
         }
-
+    
         @Test
         void getConstellationGivenExistingIdReturns200AndConstellation() throws Exception {
             mockMvc.perform(get("/constellations/1"))
@@ -1523,20 +1528,21 @@ We create package `com.sanjayrisbud.integration` to contain our integration test
                     .andExpect(jsonPath("$.constellationId").value(1))
                     .andExpect(jsonPath("$.constellationName").value("CON-YKkuk"));
         }
-
+    
         @Test
         void getConstellationGivenNonExistentIdReturns404AndError() throws Exception {
             mockMvc.perform(get("/constellations/9999"))
                     .andExpect(status().isNotFound());
         }
-    // ...
+        // ...
+    }
 ```
 
 As discussed, `@SpringBootTest` is used to load the application context.  This annotation tells Spring Boot to search for the main class in the current package and in parent packages.  However since the main class is in `com.sanjayrisbud.starzzboot` i.e. a sibling package, Spring Boot won't be able to find it automatically so we add `(classes = StarzzBootApplication.class)` to specify what the main class is.
 
 The other classes in the `integration` package follow a similar logic.
 
-For security of our system, only registered users should be allowed to make any changes to our data.  We enforce this by requiring users to log in to our system using their username and password.  Currently though, user's passwords are saved as-is in our database.  This is not desirable.  In the next chapter, we create a new endpoint that would allow users to change their passwords and save their paswords more securely.
+For security of our system, only registered users should be allowed to make any changes to our data.  We enforce this by requiring users to log in to our system using their username and password.  Currently though, user's passwords are saved as-is in our database.  This is not desirable.  In the next chapter, we create a new endpoint that would allow users to change their passwords and save their passwords more securely.
 
 </details>
 
@@ -1624,7 +1630,7 @@ To use **Spring Security Crypto** we need to add the dependency to our project:
 </dependency>
 ```
 
-Right now, the sentinel value is hardcoded in `com.sanjayrisbud.starzzboot.services.UserService`.  We may want to use this value elsewhere.  We can hardcode the value in those places too, but a better approach would be to configure the value in `application.yaml` so that it is defined in one place and can be changed without modifying code.  In the places that need the value, code can just refer to the configuration.
+Right now, the sentinel value is hardcoded in `com.sanjayrisbud.starzzboot.services.UserService`.  We may want to use this value elsewhere.  We can hard code the value in those places too, but a better approach would be to configure the value in `application.yaml` so that it is defined in one place and can be changed without modifying code.  In the places that need the value, code can just refer to the configuration.
 
 We add these lines to `src/main/resources/application.yaml`:
 
@@ -1663,7 +1669,7 @@ We modify `registerUser()`:
     }
 ```
 
-Instead of hardcoding the sentinel value for the pasword, we use `passwordResetSentinel`.
+Instead of hardcoding the sentinel value for the password, we use `passwordResetSentinel`.
 
 When we execute our tests, we see that they have broken.  There are 3 issues:
 
@@ -1690,7 +1696,8 @@ app:
 
 ```java
     public UserService(UserRepository userRepository, UserMapper userMapper, String passwordResetSentinel) { 
-    // ...
+        // ...
+    }
 ```
 
 Spring sees this constructor and tries to autowire all three parameters. For `userRepository` and `userMapper` it found matching beans. But for `passwordResetSentinel`, it couldn't find a bean of type `String` and failed.  Even though `@Value` was on the field, Spring isn't able to process it.  Spring does constructor injection before field injection.
@@ -1710,7 +1717,8 @@ We can fix this by removing `@AllArgsConstructor` and creating our own construct
             this.userMapper = userMapper;
             this.passwordResetSentinel = passwordResetSentinel;
         }
-    // ...
+        // ...
+    }
 ```
 
 The code is getting the property `app.security.password-reset-sentinel` from `application.yaml`.
@@ -1741,6 +1749,8 @@ We modify `com.sanjayrisbud.starzzboot.services.UserService`.
         private final UserMapper userMapper;
         private final PasswordEncoder passwordEncoder;
         private final String passwordResetSentinel;
+        // ...
+    }
 ```
 
 We add a field for `passwordEncoder` to hold the hashing bean.
@@ -1781,13 +1791,15 @@ We run our tests and discover that `UserServiceTest` broke again.  This is becau
     class UserServiceTest {
         @Spy
         private final UserMapper userMapper = new UserMapper();
-
+    
         @Mock
         private UserRepository userRepository;
         @Mock
         private PasswordEncoder passwordEncoder;
         @InjectMocks
         private UserService userService;
+        // ...
+    }
 ```
 
 We add another `@Mock` for `passwordEncoder`.
@@ -1842,4 +1854,213 @@ We also need to define `findByName()`.  In `com.sanjayrisbud.starzzboot.reposito
 
 The field `name` in the `User` entity contains the username, so we can just declare `findByName()` in the repository interface and Spring Data JPA can generate the method automatically.  
 
+We create our change password endpoint.  In package `com.sanjayrisbud.starzzboot.dtos`, we create `ChangePasswordDto`:
+
+```java
+    @Builder
+    @Data
+    public class ChangePasswordDto {
+        @NotBlank private String existingPassword;
+        @NotBlank private String newPassword;
+    }
+```
+
+This DTO will hold the user's inputs for their existing and new passwords.
+
+We add a new method to `com.sanjayrisbud.starzzboot.services.UserService`:
+
+```java
+    public void changePassword(Integer id, ChangePasswordDto request) {
+        var currentUser = findById(id);
+        if (!passwordEncoder.matches(request.getExistingPassword(),
+                currentUser.getPassword())) {
+            throw new InputMismatchException("Passwords don't match.");
+        }
+        currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
+    }
+```
+
+This method will handle change password requests.  It tries to match the existing password supplied
+by the user with his existing password.  If successful, the change proceeds.  Otherwise, an `InputMismatchException`
+is thrown.  We add a new method to `com.sanjayrisbud.starzzboot.exceptions.GlobalExceptionHandler`
+
+```java
+    @ExceptionHandler(InputMismatchException.class)
+    public ResponseEntity<ErrorResponseDto> handleInputMismatch(InputMismatchException ex) {
+        ErrorResponseDto errorResponse = new ErrorResponseDto(
+                ex.getMessage(), 
+                LocalDateTime.now()
+        );
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+```
+
+We add a new handler for `InputMismatchException`.
+
+We add new methods to `src/test/java/com/sanjayrisbud/starzzboot/services/UserServiceTest.java`:
+
+```java
+    @Test
+    void changePasswordGivenMatchingExistingPasswordUpdatesPassword() {
+        User u = buildUser();
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        when(userRepository.findById(u.getId()))
+                .thenReturn(Optional.of(u));
+        when(passwordEncoder.matches(request.getExistingPassword(), u.getPassword()))
+                .thenReturn(true);
+
+        userService.changePassword(u.getId(), request);
+
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void changePasswordGivenNonMatchingExistingPasswordThrowsInputMismatchException() {
+        User u = buildUser();
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        when(userRepository.findById(u.getId()))
+                .thenReturn(Optional.of(u));
+        when(passwordEncoder.matches(request.getExistingPassword(), u.getPassword()))
+                .thenReturn(false);
+
+        InputMismatchException ex = assertThrows(InputMismatchException.class,
+                () -> userService.changePassword(u.getId(), request));
+
+        assertEquals("Passwords don't match.", ex.getMessage());
+
+        verifyNoMoreInteractions(userRepository);
+    }
+```
+
+These are unit tests for our new service method.
+
+We modify `com.sanjayrisbud.starzzboot.controllers.UserController`:
+
+```java
+    @PatchMapping("/{id}/change-password")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable Integer id, @Valid @RequestBody  ChangePasswordDto request) {
+        userService.changePassword(id, request);
+        return ResponseEntity.noContent().build();
+    }
+```
+
+We add a method to listen for change password requests.
+
+We add new methods to `src/test/java/com/sanjayrisbud/starzzboot/controllers/UserControllerTest.java`:
+
+```java
+    @Test
+    void changePasswordGivenMatchingExistingPasswordReturns204() throws Exception {
+        User u = buildUser();
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        doNothing().when(userService).changePassword(u.getId(), request);
+
+        mockMvc.perform(patch("/users/" + u.getId() + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void changePasswordGivenNonMatchingExistingPasswordReturns400() throws Exception {
+        User u = buildUser();
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        doThrow(new InputMismatchException("Passwords don't match."))
+                .when(userService).changePassword(u.getId(), request);
+
+        mockMvc.perform(patch("/users/" + u.getId() + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+``` 
+
+These, in turn, are controller unit tests for our new endpoint.
+
+It's also a good idea to add integration tests for our new endpoint.  We add new methods to `src/test/java/com/sanjayrisbud/integration/UserControllerIT.java`:
+
+```java
+    @Test
+    @Transactional
+    void changePasswordGivenMatchingPasswordReturns204() throws Exception {
+        String newUserPassword = "passwordsMatch";
+        String updatedUserPassword = "passwordUpdated";
+        User u = User.builder()
+                .name("testuser12345").email("testuser12345@email.com")
+                .password(passwordEncoder.encode(newUserPassword))
+                .build();
+        userRepository.save(u);
+
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword(newUserPassword)
+                .newPassword(updatedUserPassword)
+                .build();
+
+        mockMvc.perform(patch("/users/" + u.getId() + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        assertTrue(passwordEncoder.matches(updatedUserPassword, u.getPassword()));
+    }
+
+    @Test
+    @Transactional
+    void changePasswordGivenNonMatchingPasswordReturns400() throws Exception {
+        String newUserPassword = "passwordsDontMatch";
+        User u = User.builder()
+                .name("testuser12345").email("testuser12345@email.com")
+                .password(passwordEncoder.encode(newUserPassword))
+                .build();
+        userRepository.save(u);
+
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("wrongPassword")
+                .newPassword("newPassword")
+                .build();
+
+        mockMvc.perform(patch("/users/" + u.getId() + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        assertTrue(passwordEncoder.matches(newUserPassword, u.getPassword()));
+    }
+
+    @Test
+    void changePasswordGivenNonExistentIdReturns404() throws Exception {
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        mockMvc.perform(patch("/users/9999/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+```
+
 </details>
+
+## Conclusion
+
+**starzz-boot** demonstrates a complete, production-style Spring Boot REST API built incrementally — from setting up routes and wiring in a MySQL database, to layering in DTO mapping, validation, and global exception handling, to covering the application with unit tests at the service and controller layers, verifying the full request lifecycle with integration tests backed by an in-memory H2 database, and finally securing passwords using BCrypt hashing via Spring Security Crypto.  Each chapter builds on the last, reflecting how a real backend evolves in practice.
+

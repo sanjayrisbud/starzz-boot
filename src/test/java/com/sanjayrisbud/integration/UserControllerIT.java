@@ -2,10 +2,10 @@ package com.sanjayrisbud.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sanjayrisbud.starzzboot.StarzzBootApplication;
+import com.sanjayrisbud.starzzboot.dtos.ChangePasswordDto;
 import com.sanjayrisbud.starzzboot.dtos.UserDto;
 import com.sanjayrisbud.starzzboot.models.User;
 import com.sanjayrisbud.starzzboot.repositories.UserRepository;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -76,7 +77,7 @@ class UserControllerIT {
                 .andExpect(jsonPath("$.username").value(newUsername));
 
         User u = userRepository.findByName(newUsername);
-        Assertions.assertTrue(passwordEncoder.matches(
+        assertTrue(passwordEncoder.matches(
                 passwordResetSentinel, u.getPassword()));
     }
 
@@ -94,6 +95,65 @@ class UserControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.username").value("updateduser12345"));
+    }
+
+    @Test
+    @Transactional
+    void changePasswordGivenMatchingPasswordReturns204() throws Exception {
+        String newUserPassword = "passwordsMatch";
+        String updatedUserPassword = "passwordUpdated";
+        User u = User.builder()
+                .name("testuser12345").email("testuser12345@email.com")
+                .password(passwordEncoder.encode(newUserPassword))
+                .build();
+        userRepository.save(u);
+
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword(newUserPassword)
+                .newPassword(updatedUserPassword)
+                .build();
+
+        mockMvc.perform(patch("/users/" + u.getId() + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        assertTrue(passwordEncoder.matches(updatedUserPassword, u.getPassword()));
+    }
+
+    @Test
+    @Transactional
+    void changePasswordGivenNonMatchingPasswordReturns400() throws Exception {
+        String newUserPassword = "passwordsDontMatch";
+        User u = User.builder()
+                .name("testuser12345").email("testuser12345@email.com")
+                .password(passwordEncoder.encode(newUserPassword))
+                .build();
+        userRepository.save(u);
+
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("wrongPassword")
+                .newPassword("newPassword")
+                .build();
+
+        mockMvc.perform(patch("/users/" + u.getId() + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        assertTrue(passwordEncoder.matches(newUserPassword, u.getPassword()));
+    }
+
+    @Test
+    void changePasswordGivenNonExistentIdReturns404() throws Exception {
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        mockMvc.perform(patch("/users/9999/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
     }
 
 }

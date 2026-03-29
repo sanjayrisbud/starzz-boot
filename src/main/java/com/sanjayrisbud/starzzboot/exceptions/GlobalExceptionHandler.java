@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.InputMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -36,6 +37,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleInvalidFormat(HttpMessageNotReadableException ex) {
         ErrorResponseDto errorResponse = new ErrorResponseDto(
                 "Invalid input format.",
+                LocalDateTime.now()
+        );
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(InputMismatchException.class)
+    public ResponseEntity<ErrorResponseDto> handleInputMismatch(InputMismatchException ex) {
+        ErrorResponseDto errorResponse = new ErrorResponseDto(
+                ex.getMessage(),
                 LocalDateTime.now()
         );
         return ResponseEntity.badRequest().body(errorResponse);

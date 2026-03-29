@@ -1,5 +1,6 @@
 package com.sanjayrisbud.starzzboot.services;
 
+import com.sanjayrisbud.starzzboot.dtos.ChangePasswordDto;
 import com.sanjayrisbud.starzzboot.dtos.UserDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.UserDto;
 import com.sanjayrisbud.starzzboot.dtos.UserSummaryDto;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Optional;
 
@@ -272,10 +274,10 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUserGivenNullEmailUpdatesEmailToNull() {
+    void updateUserGivenNullDateOfBirthUpdatesDateOfBirthToNull() {
         Integer id = 10;
         UserDto request = buildUserDto();
-        request.setEmail(null);
+        request.setDateOfBirth(null);
 
         User existing = buildUser();
         existing.setId(id);
@@ -284,12 +286,12 @@ class UserServiceTest {
         request.setUsername(existing.getName());
         request.setFirstName(existing.getFirstName());
         request.setLastName(existing.getLastName());
-        request.setDateOfBirth(existing.getDateOfBirth());
+        request.setEmail(existing.getEmail());
 
         User updated = User.builder()
-                .id(id).name(existing.getName()).email(null)
+                .id(id).name(existing.getName()).email(existing.getEmail())
                 .firstName(existing.getFirstName()).lastName(existing.getLastName())
-                .dateOfBirth(existing.getDateOfBirth())
+                .dateOfBirth(null)
                 .build();
 
         UserDetailsDto expected = buildUserDetailsDto(updated);
@@ -301,6 +303,45 @@ class UserServiceTest {
 
         assertEquals(expected, dto);
         verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void changePasswordGivenMatchingExistingPasswordUpdatesPassword() {
+        User u = buildUser();
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        when(userRepository.findById(u.getId()))
+                .thenReturn(Optional.of(u));
+        when(passwordEncoder.matches(request.getExistingPassword(), u.getPassword()))
+                .thenReturn(true);
+
+        userService.changePassword(u.getId(), request);
+
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void changePasswordGivenNonMatchingExistingPasswordThrowsInputMismatchException() {
+        User u = buildUser();
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        when(userRepository.findById(u.getId()))
+                .thenReturn(Optional.of(u));
+        when(passwordEncoder.matches(request.getExistingPassword(), u.getPassword()))
+                .thenReturn(false);
+
+        InputMismatchException ex = assertThrows(InputMismatchException.class,
+                () -> userService.changePassword(u.getId(), request));
+
+        assertEquals("Passwords don't match.", ex.getMessage());
+
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test

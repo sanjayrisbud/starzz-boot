@@ -1,6 +1,7 @@
 package com.sanjayrisbud.starzzboot.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sanjayrisbud.starzzboot.dtos.ChangePasswordDto;
 import com.sanjayrisbud.starzzboot.dtos.UserDetailsDto;
 import com.sanjayrisbud.starzzboot.dtos.UserDto;
 import com.sanjayrisbud.starzzboot.dtos.UserSummaryDto;
@@ -14,11 +15,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.InputMismatchException;
 import java.util.List;
 
 import static com.sanjayrisbud.starzzboot.helpers.DtoFactory.*;
 import static com.sanjayrisbud.starzzboot.helpers.EntityFactory.*;
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -150,4 +154,38 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(u.getId()));
     }
+
+    @Test
+    void changePasswordGivenMatchingExistingPasswordReturns204() throws Exception {
+        User u = buildUser();
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        doNothing().when(userService).changePassword(u.getId(), request);
+
+        mockMvc.perform(patch("/users/" + u.getId() + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void changePasswordGivenNonMatchingExistingPasswordReturns400() throws Exception {
+        User u = buildUser();
+        ChangePasswordDto request = ChangePasswordDto.builder()
+                .existingPassword("existingPassword")
+                .newPassword("newPassword")
+                .build();
+
+        doThrow(new InputMismatchException("Passwords don't match."))
+                .when(userService).changePassword(u.getId(), request);
+
+        mockMvc.perform(patch("/users/" + u.getId() + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
 }
