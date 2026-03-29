@@ -1554,6 +1554,8 @@ Project dependencies added:
 
 #### Overview
 
+In this chapter, we introduce password hashing using **Spring Security Crypto**.  Passwords are now stored as BCrypt hashes instead of plaintext.  When a user is registered, the sentinel value is hashed before being saved to the database.  A new endpoint, `PATCH /users/{id}/change-password`, allows users to update their password by supplying their existing password and a new one.  The same endpoint handles both the initial password reset (where the existing password is the sentinel) and a regular password change.
+
 #### User Resets Password
 
 ```mermaid
