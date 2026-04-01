@@ -2060,6 +2060,200 @@ It's also a good idea to add integration tests for our new endpoint.  We add new
     }
 ```
 
+We have made meaningful progress in securing our users' passwords — they are now stored as BCrypt
+hashes, making the original values practically unrecoverable even if the database is compromised.
+However, securing passwords alone is not enough.  At the moment, anyone who knows the URL of an
+endpoint can call it freely.  We need a way to ensure that only authenticated users can access
+our API.  In the next chapter, we integrate **Spring Security** and implement **JWT (JSON Web Token)**
+authentication.
+
+</details>
+
+### Chapter 7: Setting up JWT
+
+Project dependencies added:
+
+    Spring Security
+
+#### Overview
+
+In this chapter, we secure our application.  We first define our application's security rules.
+We then implement simple role based access control and authentication using JWT (JSON Web Token).
+It is the standard approach for securing REST APIs.
+
+#### Login
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User
+    participant Database
+    participant Application
+    participant ConfigFile
+
+    User ->> Application: **POST** /login<br/>{"username": <username>,<br/>"password": <password>}
+    Application ->> Database: Query user with<br/>**username**=<username>
+    Database ->> Application: User data
+    Application ->> Application: Verify that **password** matches hash(<password>) and that <password> is not "resetRequired"
+    Application ->> ConfigFile: Check if user has admin privileges
+    ConfigFile ->> Application: Result
+    Application ->> User: Token
+```
+
+#### Admin Registers User
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor Admin
+    participant Application
+    participant Database
+
+    Admin ->> Application: **POST** /users<br/>{"username": "john1234",<br/> "email": "john@acme.com"}
+    Application ->> Database: save user data with<br/>**username**=*john1234*,<br/>**password**=hash("*resetRequired*")
+    Database ->> Application: New user data
+    Application ->> Admin: HTTP Response
+```
+
+#### New Endpoints
+
+| Endpoint                | Method | Description                                                  | Response |
+|-------------------------|--------|--------------------------------------------------------------|----------|
+| `/login`                | POST   | Returns a JWT to be used to authenticate subsequent requests | 200 OK   |
+
+*The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to include these new endpoints.*
+
+#### Sample Responses
+
+POST /login
+```json
+{
+    "token": "qwrtyuiop1234asdfghjkl"
+}
+```
+
+<details>
+
+<summary>Chapter Walkthrough</summary>
+
+For our application, we want users to log in using a new **POST** `/login`endpoint that we
+will create.  Although users can log in normally using their credentials i.e. they don't have
+to encode their password, their passwords are saved in the database as BCrypt-encoded strings,
+which we set up in the previous chapter.
+
+When a user logs in with valid credentials, the application issues a signed token. The user
+then includes this token in subsequent requests, and the application verifies it before granting
+access.  This is called token-based authentication as opposed to session-based authentication.
+
+In regard to access control, we want to restrict the **POST** `/users` endpoint to admins so only
+admins can create new users.  We would also like only authenticated users to have access to all
+*POST, PUT, PATCH* and *DELETE* endpoints.  The *GET* endpoints are accessible to anybody.
+
+To satisfy our first access requirement, we need to identify our admins.  This is usually done
+by tagging them in our `users` table with a field like `isAdmin`.  However, our assumption is that
+we cannot easily alter our database schema.  As a workaround, we can define our admins in `application.yaml`.
+The downside of this is that if we ever need to modify this list, we would need to redeploy the
+application.
+
+We create new users `admin1`, `admin2` and `admin3`, reset their passwords, and in `src/main/resources/application.yaml`,
+we add a new `app.admins` after `app.security`:
+
+```yaml
+app:
+  security:
+    password-reset-sentinel: resetRequired
+  admins:
+    - admin1
+    - admin2
+    - admin3
+```
+
+We also add `app.admins` in `src/test/resources/application.yaml` for our tests.
+
+To implement security, we will use **Spring Security**.  In the previous chapter, we added
+**Spring Security Crypto** to our project.  It is already included in **Spring Security** so we
+can remove the earlier dependency.  In `pom.xml`, replace:
+
+```xml
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-crypto</artifactId>
+</dependency>
+```
+
+with:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-test</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+**JJWT** is a Java library providing end-to-end JSON Web Token creation and verification.
+We need to add **JJWT** to our project:
+
+```xml
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-api</artifactId>
+    <version>0.12.6</version>
+</dependency>
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-impl</artifactId>
+    <version>0.12.6</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-jackson</artifactId>
+    <version>0.12.6</version>
+    <scope>runtime</scope>
+</dependency>
+```
+
+We add the above snippet to `pom.xml`.
+
+Adding `spring-boot-starter-security` to the project immediately activates Spring Security with
+its default behavior: all endpoints are locked down, a default in-memory user is created with
+a randomly generated password, and form login is enabled. 
+
+Since we have our own security rules, we need to disable this default behavior.  We define our
+rules by adding a `SecurityFilterChain` bean.  We add this to the security configuration class we
+created earlier.  We add this in `com.sanjayrisbud.starzzboot.config.SecurityConfig`:
+
+```java
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .formLogin(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+    
+        return http.build();
+    }
+```
+
+The object returned by this method is our `SecurityFilterChain` bean.  It accepts as a parameter
+an `HttpSecurity` object, which is a builder object.  We chain configuration methods on it, with each method requiring a lambda to set a specific configuration:
+
+- `.csrf()`: *CSRF* is disabled — CSRF attacks exploit browser-based session cookies which we are not using so we can disable it.
+- `sessionManagement()`: *Session management* is set to `STATELESS` — our application will not create or use HTTP sessions; authentication state is carried entirely in the JWT.  Effectively we are also disabling it.
+- `.formLogin()` and `.httpBasic()`: *Form login* and *HTTP Basic Authentication* are disabled — we do not want Spring Security's built-in login mechanisms; we will handle authentication ourselves via `POST /login`.
+- `.authorizeHttpRequests()`: *All requests are permitted for now* — we will lock down specific endpoints once our JWT filter is in place.
+
+On our application's startup, Spring calls `securityFilterChain()`.  The method configures and builds a `SecurityFilterChain` bean.  Spring Security picks up that bean and evaluates every HTTP request against the rules we defined.
+
 </details>
 
 ## Conclusion

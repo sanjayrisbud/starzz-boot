@@ -20,3 +20,7 @@ spring:
 app:
   security:
     password-reset-sentinel: resetRequired
+  admins:
+    - admin1
+    - admin2
+    - admin3
