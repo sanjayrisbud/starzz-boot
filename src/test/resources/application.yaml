@@ -20,6 +20,8 @@ spring:
 app:
   security:
     password-reset-sentinel: resetRequired
+    jwt-secret: ${JWT_SECRET}
+    jwt-expiration: 86400000
   admins:
     - admin1
     - admin2
