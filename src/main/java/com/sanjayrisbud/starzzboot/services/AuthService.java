@@ -36,7 +36,7 @@ public class AuthService {
             throw new BadCredentialsException("Invalid credentials.");
         }
         if (passwordEncoder.matches(sentinel, user.getPassword())) {
-            throw new PasswordResetRequiredException();
+            throw new PasswordResetRequiredException(user.getId());
         }
         String role = adminProperties.getAdmins().contains(user.getName()) ? "ADMIN" : "USER";
         return jwtService.generateToken(user.getId(), user.getName(), role);

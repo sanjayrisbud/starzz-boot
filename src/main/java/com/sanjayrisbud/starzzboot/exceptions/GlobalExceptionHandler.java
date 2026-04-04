@@ -1,6 +1,7 @@
 package com.sanjayrisbud.starzzboot.exceptions;
 
 import com.sanjayrisbud.starzzboot.dtos.ErrorResponseDto;
+import com.sanjayrisbud.starzzboot.dtos.PasswordResetRequiredDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -62,11 +63,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PasswordResetRequiredException.class)
-    public ResponseEntity<ErrorResponseDto> handlePasswordResetRequired(PasswordResetRequiredException ex) {
-        ErrorResponseDto errorResponse = new ErrorResponseDto(
+    public ResponseEntity<PasswordResetRequiredDto> handlePasswordResetRequired(PasswordResetRequiredException ex) {
+        var response = new PasswordResetRequiredDto(
                 ex.getMessage(),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                ex.getUserId()
         );
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 }

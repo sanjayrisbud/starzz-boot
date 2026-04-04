@@ -1723,7 +1723,7 @@ We can fix this by removing `@AllArgsConstructor` and creating our own construct
     }
 ```
 
-The code is getting the property `app.security.password-reset-sentinel` from `application.yaml`.
+The code is getting the property `app.security.password-reset-sentinel` from `application.yaml`.  Now we are able to set `passwordResetSentinel` as `final`.
 
 We now write the code to hash passwords.
 
@@ -1993,7 +1993,7 @@ We add new methods to `src/test/java/com/sanjayrisbud/starzzboot/controllers/Use
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
-``` 
+```
 
 These, in turn, are controller unit tests for our new endpoint.
 
@@ -2149,7 +2149,8 @@ access.  This is called token-based authentication as opposed to session-based a
 
 In regard to access control, we want to restrict the **POST** `/users` endpoint to admins so only
 admins can create new users.  We would also like only authenticated users to have access to all
-*POST, PUT, PATCH* and *DELETE* endpoints.  The *GET* endpoints are accessible to anybody.
+*POST, PUT, PATCH* and *DELETE* endpoints.  The *GET* endpoints of galaxies, constellations and stars are accessible to anybody.
+We still restrict the *GET* endpoints of users to be accessible only to authenticated users.
 
 To satisfy our first access requirement, we need to identify our admins.  This is usually done
 by tagging them in our `users` table with a field like `isAdmin`.  However, our assumption is that
@@ -2233,8 +2234,11 @@ its default behavior: all endpoints are locked down, a default in-memory user is
 a randomly generated password, and form login is enabled. 
 
 Since we have our own security rules, we need to disable this default behavior.  We define our
-rules by adding a `SecurityFilterChain` bean.  We add this to the security configuration class we
-created earlier.  We add this in `com.sanjayrisbud.starzzboot.config.SecurityConfig`:
+rules by adding a `SecurityFilterChain` bean.  A *filter chain* is literally several filters chained together — each one processes the request in sequence and passes it to the next.  
+
+Spring Security's filter chain contains filters responsible for authentication and authorization — things like reading credentials, validating tokens, and enforcing access rules.  By defining a `SecurityFilterChain` bean, we take control of which of those filters are active and how they behave.
+
+We add this to the security configuration class we created earlier, in `com.sanjayrisbud.starzzboot.config.SecurityConfig`:
 
 ```java
     @Bean
@@ -2263,7 +2267,7 @@ On our application's startup, Spring calls `securityFilterChain()`.  The method 
 Next, we implement the `POST /login` endpoint.
 
 We need a DTO to be sent as the body of the request to the endpoint, to hold the user's credentials.
-In package `com.sanjayrisbud.starzzboot.dtos`, we create class `LoginDTO`:
+In package `com.sanjayrisbud.starzzboot.dtos`, we create class `LoginDto`:
 
 ```java
     @Data
@@ -2288,14 +2292,31 @@ If the attempt was unsuccessful, we instead throw an exception.  An attempt can 
 - The supplied username exists but the supplied password doesn't match his password saved in the database.
 - The supplied username and password matches a record in the database but the password equals the sentinel.
 
-We handle the first two cases by simply throwing `BadCredentialsException`.  We deliberately use the same exception for both cases to avoid revealing whether a given username exists.  For the third case, we can throw a custom exception to give more information.
+We handle the first two cases by simply throwing `BadCredentialsException`.  We deliberately use the same exception for both cases to avoid revealing whether a given username exists.  For the third case, we can be a bit more helpful because the user attempting to log in has given the correct credentials; it's just a password reset that is lacking.
+
+Also in package `com.sanjayrisbud.starzzboot.dtos`, we create class `PasswordResetRequiredDto`:
+
+```java
+    public record PasswordResetRequiredDto(
+            String message,
+            LocalDateTime timestamp,
+            Integer userId
+    ) {}
+```
+
+Aside from the message and timestamp, this DTO contains the user's id.
 
 In `com.sanjayrisbud.starzzboot.exceptions` we create a new `PasswordResetRequiredException`:
 
 ```java
+    @Getter
     public class PasswordResetRequiredException extends RuntimeException {
-        public PasswordResetRequiredException() {
+
+        private final Integer userId;
+
+        public PasswordResetRequiredException(Integer userId) {
             super("Password reset required before logging in.");
+            this.userId = userId;
         }
     }
 ```
@@ -2315,14 +2336,17 @@ As with our other exceptions, we add handlers for these exceptions in our except
     }
 
     @ExceptionHandler(PasswordResetRequiredException.class)
-    public ResponseEntity<ErrorResponseDto> handlePasswordResetRequired(PasswordResetRequiredException ex) {
-        ErrorResponseDto errorResponse = new ErrorResponseDto(
+    public ResponseEntity<PasswordResetRequiredDto> handlePasswordResetRequired(PasswordResetRequiredException ex) {
+        var response = new PasswordResetRequiredDto(
                 ex.getMessage(),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                ex.getUserId()
         );
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 ```
+
+When `PasswordResetRequiredException` is thrown, the user can take the id indicated in the response and then call the *Change Password* endpoint.
 
 To generate JWTs, we need a JWT secret to sign our tokens.  The secret is our application's way to check whether tokens included with requests havee been tampered with.  This is sensitive information, so we store it in `.env`:
 
@@ -2345,7 +2369,7 @@ app:
 
 Here we specify that tokens should be invalidated after 24h.
 
-We will also these configurations in our tests so we also include them in `src/test/resources/application.yaml`.
+We will also include these configurations in our tests so we also include them in `src/test/resources/application.yaml`.
 
 We then create a service to handle token generation.  In  package `com.sanjayrisbud.starzzboot.services`, we create `JwtService`:
 
@@ -2371,7 +2395,7 @@ We then create a service to handle token generation.  In  package `com.sanjayris
         }
 
         private SecretKey getSigningKey() {
-            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+            byte[] keyBytes = jwtSecret.getBytes();
             return Keys.hmacShaKeyFor(keyBytes);
         }
     }
@@ -2397,64 +2421,165 @@ The `@ConfigurationProperties(prefix = "app")` annotation tells Spring to bind p
 In `com.sanjayrisbud.starzzboot.services` we then create `AuthService`:
 
 ```java
-@Service
-public class AuthService {
+    @Service
+    public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-    private final String sentinel;
-    private final AdminProperties adminProperties;
+        private final UserRepository userRepository;
+        private final PasswordEncoder passwordEncoder;
+        private final JwtService jwtService;
+        private final String sentinel;
+        private final AdminProperties adminProperties;
 
-    public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtService jwtService,
-                       @Value("${app.security.password-reset-sentinel}") String sentinel,
-                       AdminProperties adminProperties) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-        this.sentinel = sentinel;
-        this.adminProperties = adminProperties;
-    }
-
-    public String login(LoginDto request) {
-        var user = userRepository.findByName(request.getUsername());
-        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid credentials.");
+        public AuthService(UserRepository userRepository,
+                        PasswordEncoder passwordEncoder,
+                        JwtService jwtService,
+                        @Value("${app.security.password-reset-sentinel}") String sentinel,
+                        AdminProperties adminProperties) {
+            this.userRepository = userRepository;
+            this.passwordEncoder = passwordEncoder;
+            this.jwtService = jwtService;
+            this.sentinel = sentinel;
+            this.adminProperties = adminProperties;
         }
-        if (passwordEncoder.matches(sentinel, user.getPassword())) {
-            throw new PasswordResetRequiredException();
+
+        public String login(LoginDto request) {
+            var user = userRepository.findByName(request.getUsername());
+            if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new BadCredentialsException("Invalid credentials.");
+            }
+            if (passwordEncoder.matches(sentinel, user.getPassword())) {
+                throw new PasswordResetRequiredException(user.getId());
+            }
+            String role = adminProperties.getAdmins().contains(user.getName()) ? "ADMIN" : "USER";
+            return jwtService.generateToken(user.getId(), user.getName(), role);
         }
-        String role = adminProperties.getAdmins().contains(user.getName()) ? "ADMIN" : "USER";
-        return jwtService.generateToken(user.getId(), user.getName(), role);
     }
-}
 ```
 
-This class handles our login logic.  It proceeds as follows.  We first look up the user by username.  If the user does not exist, or if the supplied password does not match the stored BCrypt hash, we throw a `BadCredentialsException`.  Next, we check whether the stored password is a hash of the sentinel — if so, the user has not yet reset their password and we throw a `PasswordResetRequiredException`.  Finally, we determine the user's role by checking the admin list via `AppProperties`, and issue a signed JWT.
+This class handles our login logic.  It proceeds as follows.  We first look up the user by username.  If the user does not exist, or if the supplied password does not match the stored BCrypt hash, we throw a `BadCredentialsException`.  Next, we check whether the stored password is a hash of the sentinel — if so, the user has not yet reset their password and we throw a `PasswordResetRequiredException`.  Finally, we determine the user's role by checking the admin list via `AdminProperties`, and issue a signed JWT.
 
 In `com.sanjayrisbud.starzzboot.controllers` we create `AuthController`:
 
 ```java
-@AllArgsConstructor
-@RestController
-public class AuthController {
+    @AllArgsConstructor
+    @RestController
+    public class AuthController {
 
-    private final AuthService authService;
+        private final AuthService authService;
 
-    @PostMapping("/login")
-    public ResponseEntity<TokenDto> login(@Valid @RequestBody LoginDto request) {
-        String token = authService.login(request);
-        return ResponseEntity.ok(new TokenDto(token));
+        @PostMapping("/login")
+        public ResponseEntity<TokenDto> login(@Valid @RequestBody LoginDto request) {
+            String token = authService.login(request);
+            return ResponseEntity.ok(new TokenDto(token));
+        }
     }
-}
 ```
 
-This class listen for requests to `/login`.
+This class listens for requests to `/login`.
+
+With the login endpoint in place, we now need to validate the JWT on every subsequent request and lock down the endpoints.  To do this, we create a filter that intercepts every incoming request, extracts the token from the `Authorization` header, validates it, and sets the authenticated user in Spring Security's `SecurityContext`.  
+
+To validate tokens and set the user, we add two parsing methods to `com.sanjayrisbud.starzzboot.services.JwtService`:
+
+```java
+    public Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
+    }
+```
+
+`extractAllClaims()` parses the signed JWT and returns the claims.  `parseSignedClaims()` checks whether the token has been tampered with or has expired, and if so, throws a `JwtException`.  The exception propagates up to the caller's catch block.  `extractRole()` is a convenience method that pulls the `role` from the claims.
+
+We create a new package `com.sanjayrisbud.starzzboot.filters` to contain classes related to our request filters.  In this package, we create a class `JwtAuthFilter`:
+
+```java
+    @AllArgsConstructor
+    @Component
+    public class JwtAuthFilter extends OncePerRequestFilter {
+
+        private final JwtService jwtService;
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        FilterChain filterChain)
+                throws ServletException, IOException {
+            String authHeader = request.getHeader("Authorization");
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                try {
+                    String role = jwtService.extractRole(token);
+                    var authority = new SimpleGrantedAuthority("ROLE_" + role);
+                    var auth = new UsernamePasswordAuthenticationToken(null, null, List.of(authority));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } catch (Exception ignored) {
+                // Parsing failed — unauthenticated. Spring Security enforces access rules downstream.
+                }
+            }
+
+            filterChain.doFilter(request, response);
+        }
+    }
+```
+
+We extend `OncePerRequestFilter` to guarantee the filter runs exactly once per request.  If the `Authorization` header is present and starts with `Bearer `, we strip the prefix and pass the token to `JwtService` to extract the role.  If we are able to extract the role from the token, we are already sure that the request is authenticated; we just need to inform the downstream filters.
+
+For that we build a `UsernamePasswordAuthenticationToken`.  This is Spring Security's standard representation of an authenticated principal.  The constructor of `UsernamePasswordAuthenticationToken` can take 3 parameters: the principal's username, the principal's password and the principal's roles.  The first 2, we can set as `null` because these info won't be necessary for later filters.  We need to pass the third parameter thhough because the role will be referenced later.  We set the returned object on the `SecurityContextHolder`.
+
+If the token is missing, expired, or malformed, the `SecurityContext` stays empty.
+
+With the filter in place, we update our security filter chain in `com.sanjayrisbud.starzzboot.config.SecurityConfig`:
+
+```java
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .formLogin(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                .requestMatchers(HttpMethod.PATCH, "/users/*/change-password").permitAll()
+                .requestMatchers(HttpMethod.GET, "/galaxies/**", "/constellations/**", "/stars/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/users").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, authEx) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+            );
+
+        return http.build();
+    }
+```
+
+We update `authorizeHttpRequests()` with our access rules:
+
+- `POST /login` is public — anyone can attempt to log in.
+- `PATCH /users/*/change-password` is public — a user whose password is the sentinel cannot get a JWT because login is blocked with a 403.  They need to call this endpoint first, so requiring a JWT here would create a deadlock.  The `oldPassword` requirement in the request body is the only gate needed.
+- `GET /galaxies/**`, `GET /constellations/**`, `GET /stars/**` are public — this is read-only, non-sensitive data.  Making these endpoints public is a deliberate design decision based on data sensitivity, not HTTP method.  User endpoints are kept protected because they return PII (email, name, date of birth).
+- `POST /users` requires the `ADMIN` role — only admins can create new users.
+- All other endpoints require any authenticated user.
+
+Earlier, we mentioned that since we had our own security rules, we wanted to define our own `SecurityFilterChain` bean.  We used to have a basic chain, but now our filter chain is more complex:
+
+- `.addFilterBefore()`: We use `UsernamePasswordAuthenticationFilter` as a reference point to position our `JwtAuthFilter` in the chain.  Our filter populates the `SecurityContext` from the JWT (note that `UsernamePasswordAuthenticationFilter` is inactive because we disabled form login).
+
+- `.exceptionHandling()`: Spring Security's default behavior is to return HTTP 403 for unauthenticated requests.  This is misleading; HTTP 403 means the user is known but lacks permission.  We thus configure `ExceptionTranslationFilter` to use a custom `AuthenticationEntryPoint` that returns HTTP 401, which means the user has not authenticated.
+
+- `authorizeHttpRequests()`: Spring Security checks the `SecurityContext` to enforce our access rules.  The rules set in this method are enforced by `AuthorizationFilter`.
 
 </details>
 
 ## Conclusion
 
-**starzz-boot** demonstrates a complete, production-style Spring Boot REST API built incrementally — from setting up routes and wiring in a MySQL database, to layering in DTO mapping, validation, and global exception handling, to covering the application with unit tests at the service and controller layers, verifying the full request lifecycle with integration tests backed by an in-memory H2 database, and finally securing passwords using BCrypt hashing via Spring Security Crypto.  Each chapter builds on the last, reflecting how a real backend evolves in practice.
+**starzz-boot** demonstrates a complete, production-style Spring Boot REST API built incrementally — from setting up routes and wiring in a MySQL database, to layering in DTO mapping, validation, and global exception handling, to covering the application with unit tests at the service and controller layers, verifying the full request lifecycle with integration tests backed by an in-memory H2 database, securing passwords using BCrypt hashing, and finally locking down the API with Spring Security and JWT-based authentication.  Each chapter builds on the last, reflecting how a real backend evolves in practice.
