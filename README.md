@@ -71,7 +71,7 @@ Our assumption is that we are working with a legacy database that cannot easily 
 
 ## Test Coverage
 
-The application is covered by both unit tests and integration tests. Unit tests cover the service and controller layers in isolation using JUnit 5 and Mockito. Integration tests verify the full request lifecycle — from HTTP request through controller, service, repository, and H2 database — using `@SpringBootTest` and `MockMvc`. Overall line coverage is **99.6%**, with the only uncovered code being the single-line main method in `StarzzBootApplication.java`.
+The application is covered by both unit tests and integration tests. Unit tests cover the service and controller layers in isolation using JUnit 5 and Mockito. Integration tests verify the full request lifecycle — from HTTP request through controller, service, repository, and H2 database — using `@SpringBootTest` and `MockMvc`. Overall line coverage is **99.7%**, with the only uncovered code being the single-line main method in `StarzzBootApplication.java`.
 
 ![Coverage](assets/coverage.png)
 
@@ -2376,12 +2376,14 @@ We then create a service to handle token generation.  In  package `com.sanjayris
 ```java
     @Service
     public class JwtService {
-
-        @Value("${app.security.jwt-secret}")
-        private String jwtSecret;
-
-        @Value("${app.security.jwt-expiration}")
-        private long jwtExpiration;
+        private final String jwtSecret;
+        private final long jwtExpiration;
+    
+        public JwtService(@Value("${app.security.jwt-secret}") String jwtSecret,
+                          @Value("${app.security.jwt-expiration}") long jwtExpiration) {
+            this.jwtSecret = jwtSecret;
+            this.jwtExpiration = jwtExpiration;
+        }
 
         public String generateToken(Integer id, String username, String role) {
             return Jwts.builder()
@@ -2640,6 +2642,231 @@ In `UserControllerIT`, we add the same HTTP 401 test for `POST /users`.  We also
                 .andExpect(status().isForbidden());
     }
 ```
+
+We now turn to unit tests for the new classes introduced in this chapter.  We start with `JwtService`.
+
+`JwtService` uses `jwtSecret` and `jwtExpiration`, which are injected via constructor parameters annotated with `@Value`.  Each test simply instantiates `JwtService`.
+
+Our first test verifies that a generated token contains the correct claims — subject (user ID), username, and role — by parsing it back through `extractAllClaims()` and `extractRole()`:
+
+```java
+    @Test
+    void generateTokenReturnsTokenWithCorrectClaims() {
+        JwtService jwtService = new JwtService(SECRET, EXPIRATION);
+        String token = jwtService.generateToken(1, "john", "USER");
+        assertEquals("1", jwtService.extractAllClaims(token).getSubject());
+        assertEquals("john", jwtService.extractAllClaims(token).get("username", String.class));
+        assertEquals("USER", jwtService.extractRole(token));
+    }
+```
+
+Our second test verifies that tokens with a different role are generated correctly:
+
+```java
+    @Test
+    void generateTokenReturnsTokenWithAdminRole() {
+        JwtService jwtService = new JwtService(SECRET, EXPIRATION);
+        String token = jwtService.generateToken(1, "admin1", "ADMIN");
+        assertEquals("ADMIN", jwtService.extractRole(token));
+    }
+```
+
+Our third test verifies that parsing an expired token throws a `JwtException`.  We pass `1L` as the expiration, generate a token, sleep briefly to let it expire, then assert that `extractRole()` throws:
+
+```java
+    @Test
+    void extractRoleGivenExpiredTokenThrowsJwtException() throws InterruptedException {
+        JwtService jwtService = new JwtService(SECRET, 1L);
+        String token = jwtService.generateToken(1, "john", "USER");
+        Thread.sleep(10);
+        assertThrows(JwtException.class, () -> jwtService.extractRole(token));
+    }
+```
+
+Next, we write `AuthServiceTest`.  The class setup follows the same pattern as our other service tests — `@Mock` for repositories and external services, `@InjectMocks` for the class under test — with two additions:
+
+`AuthService` has a `sentinel` field injected via `@Value` through its constructor.  Mockito's `@InjectMocks` does not resolve `@Value`; it passes `null` for that parameter.  We correct this in `@BeforeEach` using `ReflectionTestUtils.setField()`.
+
+`AdminProperties` is a plain `@Data` class; we can instantiate it directly and annotate it with `@Spy` so Mockito includes it in constructor injection.  We populate the admins list also in `@BeforeEach`:
+
+```java
+    @Spy
+    private AdminProperties adminProperties = new AdminProperties();
+
+    @BeforeEach
+    void setUp() {
+        adminProperties.setAdmins(List.of("admin1"));
+        ReflectionTestUtils.setField(authService, "sentinel", SENTINEL);
+    }
+```
+
+We cover five scenarios in `AuthServiceTest`:
+
+**User not found** — `userRepository.findByName()` returns `null`, so the null check fires and `BadCredentialsException` is thrown:
+
+```java
+    @Test
+    void loginGivenNonExistentUserThrowsBadCredentialsException() {
+        // ...
+        when(userRepository.findByName(request.getUsername())).thenReturn(null);
+        assertThrows(BadCredentialsException.class, () -> authService.login(request));
+    }
+```
+
+**Wrong password** — the user is found but `passwordEncoder.matches()` returns `false`:
+
+```java
+    @Test
+    void loginGivenWrongPasswordThrowsBadCredentialsException() {
+        // ...
+        when(userRepository.findByName(request.getUsername())).thenReturn(user);
+        when(passwordEncoder.matches(request.getPassword(), HASHED_PASSWORD)).thenReturn(false);
+        assertThrows(BadCredentialsException.class, () -> authService.login(request));
+    }
+```
+
+**Sentinel password** — password matches but the stored hash is the sentinel, so `PasswordResetRequiredException` is thrown.  We also assert that the exception carries the correct `userId` so the client knows which user needs to reset their password:
+
+```java
+    @Test
+    void loginGivenSentinelPasswordThrowsPasswordResetRequiredException() {
+        // ...
+        when(passwordEncoder.matches(request.getPassword(), HASHED_PASSWORD)).thenReturn(true);
+        when(passwordEncoder.matches(SENTINEL, HASHED_PASSWORD)).thenReturn(true);
+        PasswordResetRequiredException ex = assertThrows(
+                PasswordResetRequiredException.class, () -> authService.login(request));
+        assertEquals(1, ex.getUserId());
+    }
+```
+
+**Admin login** — the username appears in `AdminProperties.admins`, so `generateToken()` is called with `"ADMIN"`:
+
+```java
+    @Test
+    void loginGivenAdminUserReturnsTokenWithAdminRole() {
+        // ...
+        when(jwtService.generateToken(1, "admin1", "ADMIN")).thenReturn("admin-token");
+        assertEquals("admin-token", authService.login(request));
+    }
+```
+
+**Regular user login** — the username is not in the admins list, so `generateToken()` is called with `"USER"`:
+
+```java
+    @Test
+    void loginGivenRegularUserReturnsTokenWithUserRole() {
+        // ...
+        when(jwtService.generateToken(1, "john", "USER")).thenReturn("user-token");
+        assertEquals("user-token", authService.login(request));
+    }
+```
+
+We also write `AuthControllerTest` using the same `@WebMvcTest` + `@AutoConfigureMockMvc(addFilters = false)` pattern as the other controller tests.  `AuthController` depends only on `AuthService`, but we still need `@MockitoBean JwtService` to satisfy `JwtAuthFilter`'s dependency.
+
+`AuthControllerTest` covers five scenarios:
+
+**Valid credentials** — `authService.login()` returns a token string, and the response body contains it:
+
+```java
+    @Test
+    void loginGivenValidCredentialsReturns200WithToken() throws Exception {
+        // ...
+        when(authService.login(request)).thenReturn("jwt-token");
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("jwt-token"));
+    }
+```
+
+**Invalid credentials** — `authService.login()` throws `BadCredentialsException`, which `GlobalExceptionHandler` maps to HTTP 401:
+
+```java
+    @Test
+    void loginGivenInvalidCredentialsReturns401() throws Exception {
+        // ...
+        when(authService.login(request))
+                .thenThrow(new BadCredentialsException("Invalid credentials."));
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+```
+
+**Sentinel password** — `authService.login()` throws `PasswordResetRequiredException`, which `GlobalExceptionHandler` maps to HTTP 403.  We also assert that the response body contains the `userId` so the client knows which user needs to reset their password:
+
+```java
+    @Test
+    void loginGivenSentinelPasswordReturns403WithUserId() throws Exception {
+        // ...
+        when(authService.login(request))
+                .thenThrow(new PasswordResetRequiredException(1));
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.userId").value(1));
+    }
+```
+
+**Invalid request data** and **malformed JSON** — both return HTTP 400, consistent with the other controller tests.
+
+Finally, we write `AuthControllerIT`.  Unlike the other integration tests, `AuthControllerIT` does not use `@WithMockUser` at all — its purpose is to verify the full login-to-access flow using real JWTs.  Each test creates its own user inline with a BCrypt-encoded password, similar to the approach in `UserControllerIT`.
+
+We also update `src/test/resources/application.yaml` to replace `${JWT_SECRET}` with a hardcoded test value.  The production YAML reads the secret from an environment variable.  For tests, a hardcoded value in the test config is fine and actually better since it removes that dependency.
+
+`AuthControllerIT` covers six scenarios:
+
+**Login returns token** — a user is created, login is called with the correct password, and the response contains a non-empty token:
+
+```java
+    @Test
+    @Transactional
+    void loginGivenValidCredentialsReturns200WithToken() throws Exception {
+        // create user, then:
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+    }
+```
+
+**Token grants access to protected endpoint** — we extract the token from the login response and attach it as a `Bearer` header on `GET /users`, which expects an authenticated user.  This is the key test that exercises `JwtAuthFilter` end-to-end:
+
+```java
+    @Test
+    @Transactional
+    void loginGivenValidTokenAllowsAccessToProtectedEndpoint() throws Exception {
+        // login, extract token, then:
+        mockMvc.perform(get("/users")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+```
+
+**Wrong password returns 401** — `AuthService` throws `BadCredentialsException`, mapped to HTTP 401.
+
+**User role cannot create user** — a regular user (not in the admins list) logs in and receives a `USER`-role token.  Using that token on `POST /users` returns HTTP 403, verifying that the `hasRole("ADMIN")` rule is enforced with a real JWT:
+
+```java
+    @Test
+    @Transactional
+    void loginGivenUserRoleTokenAttemptingToCreateUserReturns403() throws Exception {
+        // login as regular user, extract token, then:
+        mockMvc.perform(post("/users")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isForbidden());
+    }
+```
+
+**Sentinel password returns 403 with userId** — a user whose password is the BCrypt-encoded sentinel attempts to log in.  The response is HTTP 403 and the body contains the user's ID.
+
+**Invalid token and missing token both return 401** — two tests verify `JwtAuthFilter`'s handling of a malformed `Bearer` token and a completely absent `Authorization` header, both leaving the `SecurityContext` empty.
 
 </details>
 

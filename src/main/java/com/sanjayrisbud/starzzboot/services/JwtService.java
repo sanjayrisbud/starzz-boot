@@ -12,11 +12,14 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    @Value("${app.security.jwt-secret}")
-    private String jwtSecret;
+    private final String jwtSecret;
+    private final long jwtExpiration;
 
-    @Value("${app.security.jwt-expiration}")
-    private long jwtExpiration;
+    public JwtService(@Value("${app.security.jwt-secret}") String jwtSecret,
+                      @Value("${app.security.jwt-expiration}") long jwtExpiration) {
+        this.jwtSecret = jwtSecret;
+        this.jwtExpiration = jwtExpiration;
+    }
 
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
