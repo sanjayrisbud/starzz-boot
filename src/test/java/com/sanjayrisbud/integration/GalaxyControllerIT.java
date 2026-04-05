@@ -11,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.security.test.context.support.WithMockUser;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -46,7 +48,16 @@ class GalaxyControllerIT {
     }
 
     @Test
+    void registerGalaxyWithoutAuthReturns401() throws Exception {
+        mockMvc.perform(post("/galaxies")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @Transactional
+    @WithMockUser
     void registerGalaxyGivenValidDataReturns201AndGalaxy() throws Exception {
         GalaxyDto request = GalaxyDto.builder()
                 .galaxyName("Test Galaxy")
@@ -68,6 +79,7 @@ class GalaxyControllerIT {
 
     @Test
     @Transactional
+    @WithMockUser
     void updateGalaxyGivenExistingIdReturns200AndUpdatedGalaxy() throws Exception {
         GalaxyDto request = GalaxyDto.builder()
                 .galaxyName("Updated Galaxy")
@@ -89,6 +101,7 @@ class GalaxyControllerIT {
 
     @Test
     @Transactional
+    @WithMockUser
     void deleteGalaxyGivenExistingIdReturns204() throws Exception {
         mockMvc.perform(delete("/galaxies/1"))
                 .andExpect(status().isNoContent());

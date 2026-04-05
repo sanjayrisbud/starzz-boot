@@ -7,8 +7,10 @@ import com.sanjayrisbud.starzzboot.dtos.ConstellationSummaryDto;
 import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.models.Constellation;
 import com.sanjayrisbud.starzzboot.services.ConstellationService;
+import com.sanjayrisbud.starzzboot.services.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ConstellationController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class ConstellationControllerTest {
 
     @Autowired
@@ -37,6 +40,9 @@ class ConstellationControllerTest {
 
     @MockitoBean
     private ConstellationService constellationService;
+
+    @MockitoBean
+    private JwtService jwtService;
 
     @Test
     void getConstellationListReturns200WithEmptyList() throws Exception {

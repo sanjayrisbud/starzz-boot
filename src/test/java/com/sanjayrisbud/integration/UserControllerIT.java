@@ -16,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.security.test.context.support.WithMockUser;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -40,6 +42,7 @@ class UserControllerIT {
     private String passwordResetSentinel;
 
     @Test
+    @WithMockUser
     void getUserListReturns200AndList() throws Exception {
         mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
@@ -47,6 +50,7 @@ class UserControllerIT {
     }
 
     @Test
+    @WithMockUser
     void getUserGivenExistingIdReturns200AndUser() throws Exception {
         mockMvc.perform(get("/users/1"))
                 .andExpect(status().isOk())
@@ -55,13 +59,42 @@ class UserControllerIT {
     }
 
     @Test
+    @WithMockUser
     void getUserGivenNonExistentIdReturns404AndError() throws Exception {
         mockMvc.perform(get("/users/9999"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
+    void registerUserWithoutAuthReturns401() throws Exception {
+        UserDto request = UserDto.builder()
+                .username("testuser12345")
+                .email("test@email.com")
+                .build();
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser
+    void registerUserWithoutAdminRoleReturns403() throws Exception {
+        UserDto request = UserDto.builder()
+                .username("testuser12345")
+                .email("test@email.com")
+                .build();
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @Transactional
+    @WithMockUser(roles = "ADMIN")
     void registerUserGivenValidDataReturns201AndUser() throws Exception {
         String newUsername = "testuser12345";
         UserDto request = UserDto.builder()
@@ -83,6 +116,7 @@ class UserControllerIT {
 
     @Test
     @Transactional
+    @WithMockUser
     void updateUserGivenExistingIdReturns200AndUpdatedUser() throws Exception {
         UserDto request = UserDto.builder()
                 .username("updateduser12345")

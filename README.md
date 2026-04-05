@@ -2578,6 +2578,69 @@ Earlier, we mentioned that since we had our own security rules, we wanted to def
 
 - `authorizeHttpRequests()`: Spring Security checks the `SecurityContext` to enforce our access rules.  The rules set in this method are enforced by `AuthorizationFilter`.
 
+We have finished writing our application's code.  We now proceed to adding new and fixing existing tests.
+
+When we run our existing tests, we discover that all our controller and integration tests have failed.
+
+Spring Security is now a dependency of our project so it gets loaded.  It is interfering with our existing tests.
+
+Our controller tests use `@WebMvcTest`, which loads a limited application context containing only the web layer.  Spring Security's auto-configuration is part of that web layer, so it gets loaded too.  The failures in our controller tests are due to this auto-configuration (CSRF protection and access rule blocking).  However, controller tests are only concerned with controller logic — routing, validation, and response format — and not with security rules.  Thus the fix is to tell MockMvc not to apply filters when processing requests, using `@AutoConfigureMockMvc(addFilters = false)`:
+
+```java
+    @WebMvcTest(ConstellationController.class)
+    @AutoConfigureMockMvc(addFilters = false)
+    class ConstellationControllerTest {
+        // ...
+    }
+```
+
+We apply this to all four controller test classes.
+
+Recall that it is `MockMvc` that allows us to mock HTTP requests and that `@WebMvcTest` already configures it for us.  `@AutoConfigureMockMvc(addFilters = false)` overrides this default configuration to instruct MockMvc not to apply filters when processing requests.  Note that the filters are still instantiated as beans in the context — they are just not applied to requests.
+
+Recall also that `@WebMvcTest` loads the web layer, including filters.  This means that our custom filter `com.sanjayrisbud.starzzboot.filters.JwtAuthFilter` also gets picked up.  Our filter depends on `JwtService`, which is not part of the web layer and is therefore not loaded by `@WebMvcTest`.  So we manually load this dependency with a mock:
+
+```java
+    @MockitoBean
+    private JwtService jwtService;
+```
+
+This is added to all four controller test classes.  Note that this mock is not used in our controller test; we only load it to satisfy the dependency in our filter.
+
+Our integration tests use `@SpringBootTest`, which loads the full application context including the real `SecurityFilterChain`.  This means all access rules are enforced.  We use `@WithMockUser` from `spring-security-test` to place a pre-authenticated user in the `SecurityContext` for tests that hit protected endpoints.  This avoids the need to perform a real login for every test.
+
+For endpoints that require any authenticated user (POST, PUT, DELETE on galaxies, constellations, and stars; GET, PUT on users), we annotate the test method with `@WithMockUser`.  For the `POST /users` endpoint which requires the `ADMIN` role, we use `@WithMockUser(roles = "ADMIN")`.  Tests for public endpoints (`GET /galaxies/**`, `GET /constellations/**`, `GET /stars/**`, and `PATCH /users/*/change-password`) are left unannotated.
+
+We also add new tests to verify that our security rules are enforced correctly.  In each of `GalaxyControllerIT`, `ConstellationControllerIT`, and `StarControllerIT`, we add a test that calls the POST endpoint without a token and expects an HTTP 401:
+
+```java
+    @Test
+    void registerConstellationWithoutAuthReturns401() throws Exception {
+        mockMvc.perform(post("/constellations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+```
+
+In `UserControllerIT`, we add the same HTTP 401 test for `POST /users`.  We also add an HTTP 403 test to verify that an authenticated user without the `ADMIN` role cannot create a new user:
+
+```java
+    @Test
+    @WithMockUser
+    void registerUserWithoutAdminRoleReturns403() throws Exception {
+        UserDto request = UserDto.builder()
+                .username("testuser12345")
+                .email("test@email.com")
+                .build();
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+```
+
 </details>
 
 ## Conclusion

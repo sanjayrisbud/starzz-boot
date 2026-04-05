@@ -7,8 +7,10 @@ import com.sanjayrisbud.starzzboot.dtos.GalaxySummaryDto;
 import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.models.Galaxy;
 import com.sanjayrisbud.starzzboot.services.GalaxyService;
+import com.sanjayrisbud.starzzboot.services.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(GalaxyController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class GalaxyControllerTest {
 
     @Autowired
@@ -37,6 +40,9 @@ class GalaxyControllerTest {
 
     @MockitoBean
     private GalaxyService galaxyService;
+
+    @MockitoBean
+    private JwtService jwtService;
 
     @Test
     void getGalaxyListReturns200WithEmptyList() throws Exception {

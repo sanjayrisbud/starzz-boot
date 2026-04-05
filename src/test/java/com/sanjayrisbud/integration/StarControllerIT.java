@@ -11,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.security.test.context.support.WithMockUser;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -46,7 +48,16 @@ class StarControllerIT {
     }
 
     @Test
+    void registerStarWithoutAuthReturns401() throws Exception {
+        mockMvc.perform(post("/stars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @Transactional
+    @WithMockUser
     void registerStarGivenValidDataReturns201AndStar() throws Exception {
         StarDto request = StarDto.builder()
                 .starName("Test Star")
@@ -69,6 +80,7 @@ class StarControllerIT {
 
     @Test
     @Transactional
+    @WithMockUser
     void updateStarGivenExistingIdReturns200AndUpdatedStar() throws Exception {
         StarDto request = StarDto.builder()
                 .starName("Updated Star")
@@ -91,6 +103,7 @@ class StarControllerIT {
 
     @Test
     @Transactional
+    @WithMockUser
     void deleteStarGivenExistingIdReturns204() throws Exception {
         mockMvc.perform(delete("/stars/1"))
                 .andExpect(status().isNoContent());

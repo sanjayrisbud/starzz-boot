@@ -6,9 +6,11 @@ import com.sanjayrisbud.starzzboot.dtos.StarDto;
 import com.sanjayrisbud.starzzboot.dtos.StarSummaryDto;
 import com.sanjayrisbud.starzzboot.exceptions.ResourceNotFoundException;
 import com.sanjayrisbud.starzzboot.models.Star;
+import com.sanjayrisbud.starzzboot.services.JwtService;
 import com.sanjayrisbud.starzzboot.services.StarService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(StarController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class StarControllerTest {
 
     @Autowired
@@ -37,6 +40,9 @@ class StarControllerTest {
 
     @MockitoBean
     private StarService starService;
+
+    @MockitoBean
+    private JwtService jwtService;
 
     @Test
     void getStarListReturns200WithEmptyList() throws Exception {

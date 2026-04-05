@@ -11,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.security.test.context.support.WithMockUser;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -46,7 +48,16 @@ class ConstellationControllerIT {
     }
 
     @Test
+    void registerConstellationWithoutAuthReturns401() throws Exception {
+        mockMvc.perform(post("/constellations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @Transactional
+    @WithMockUser
     void registerConstellationGivenValidDataReturns201AndConstellation() throws Exception {
         ConstellationDto request = ConstellationDto.builder()
                 .constellationName("Test Constellation")
@@ -64,6 +75,7 @@ class ConstellationControllerIT {
 
     @Test
     @Transactional
+    @WithMockUser
     void updateConstellationGivenExistingIdReturns200AndUpdatedConstellation() throws Exception {
         ConstellationDto request = ConstellationDto.builder()
                 .constellationName("Updated Constellation")
@@ -81,6 +93,7 @@ class ConstellationControllerIT {
 
     @Test
     @Transactional
+    @WithMockUser
     void deleteConstellationGivenExistingIdReturns204() throws Exception {
         mockMvc.perform(delete("/constellations/1"))
                 .andExpect(status().isNoContent());
