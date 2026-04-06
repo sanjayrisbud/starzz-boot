@@ -1102,10 +1102,10 @@ This chapter enhances the persistence layer in two ways. First, database credent
 ```mermaid
   flowchart     
       A[Start Application] --> B{Production or Test?}
-      B -- Test --> C[Load test/resources/application.yaml]
+      B -- Test --> C[Load test application.yaml]
       B -- Production --> D[Load .env via spring-dotenv]
-      D --> E[Load main/resources/application.yaml]
-      C --> F[Connect to H2 in-memory database]
+      D --> E[Load main application.yaml]
+      C --> F[Connect to H2 database]
       E --> G[Connect to MySQL database]
 ```
 
@@ -1584,7 +1584,7 @@ sequenceDiagram
     participant Application
     participant Database
 
-    User ->> Application: **PATCH** /users/<id>/change-password<br/>{"oldPassword": "resetRequired",<br/>"newPassword": <new password>}
+    User ->> Application: **PATCH** /users/<id>/change-password<br/>{"existingPassword": "resetRequired",<br/>"newPassword": <new password>}
     Application ->> Database: Query user data with<br/>**userId**=<id>
     Database ->> Application: User data
     Application ->> Application: Verify that **password**=hash("resetRequired")
@@ -1603,10 +1603,10 @@ sequenceDiagram
     participant Application
     participant Database
 
-    User ->> Application: **PATCH** /users/<id>/change-password<br/>{"oldPassword": <old password>,<br/>"newPassword": <new password>}
+    User ->> Application: **PATCH** /users/<id>/change-password<br/>{"existingPassword": <existing password>,<br/>"newPassword": <new password>}
     Application ->> Database: Query user data with<br/>**userId**=<id>
     Database ->> Application: User data
-    Application ->> Application: Verify that **password**=hash(<old password>)
+    Application ->> Application: Verify that **password**=hash(<existing password>)
     Application ->> Database: Update user data with<br/>**password**=hash(<new password>)
     Database ->> Application: Result
     Application ->> User: HTTP Response
@@ -1629,7 +1629,7 @@ The sentinel is a reminder that before a user can fully use our application, he 
 
 Another use case for the "change password" functionality is to allow users to periodically update their passwords, which is a good security practice.  
 
-The above use cases can be satisfied by creating a new endpoint, `/users/{id}/change-password`; the user can then provide his existing password and nominate a new one.  The application then verifies that the user's existing password is the same as the one that the user just supplied, and if so, proceeds to update the user's password to the new password.  If the user is instead requesting a password reset, the user explicitly supplies the sentinel as the old password.
+The above use cases can be satisfied by creating a new endpoint, `/users/{id}/change-password`; the user can then provide his existing password and nominate a new one.  The application then verifies that the user's existing password is the same as the one that the user just supplied, and if so, proceeds to update the user's password to the new password.  If the user is instead requesting a password reset, the user explicitly supplies the sentinel as the existing password.
 
 Note however that this solution is not secure.  Our application saves passwords to the database as-is i.e. if a user's password is *abcd1234*, it is written to the database as *abcd1234*.  Anyone with access to the database can see all the users' passwords.  To prevent this, we would need some way to save passwords in encrypted form.
 
@@ -2141,7 +2141,7 @@ sequenceDiagram
 |-------------------------|--------|--------------------------------------------------------------|----------|
 | `/login`                | POST   | Returns a JWT to be used to authenticate subsequent requests | 200 OK   |
 
-*The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to include these new endpoints.*
+*The Postman collection in* `assets/starzz-boot.postman_collection.json` *has been updated to include this new endpoint.  Requests needing Authorization headers have also been updated.*
 
 #### Sample Responses
 
@@ -2585,7 +2585,7 @@ With the filter in place, we update our security filter chain in `com.sanjayrisb
 We update `authorizeHttpRequests()` with our access rules:
 
 - `POST /login` is public — anyone can attempt to log in.
-- `PATCH /users/*/change-password` is public — a user whose password is the sentinel cannot get a JWT because login is blocked with a 403.  They need to call this endpoint first, so requiring a JWT here would create a deadlock.  The `oldPassword` requirement in the request body is the only gate needed.
+- `PATCH /users/*/change-password` is public — a user whose password is the sentinel cannot get a JWT because login is blocked with a 403.  They need to call this endpoint first, so requiring a JWT here would create a deadlock.  The `existingPassword` requirement in the request body is the only gate needed.
 - `GET /galaxies/**`, `GET /constellations/**`, `GET /stars/**` are public — this is read-only, non-sensitive data.  Making these endpoints public is a deliberate design decision based on data sensitivity, not HTTP method.  User endpoints are kept protected because they return PII (email, name, date of birth).
 - `POST /users` requires the `ADMIN` role — only admins can create new users.
 - All other endpoints require any authenticated user.
