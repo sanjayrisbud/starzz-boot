@@ -7,10 +7,47 @@
   },
   "item": [
     {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\": \"admin1\",\r\n    \"password\": \"admin1\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://127.0.0.1:{{port}}/login",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "List Users",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": {
           "raw": "http://127.0.0.1:{{port}}/users",
           "protocol": "http",
@@ -32,7 +69,13 @@
       "name": "Register User",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\r\n    \"username\": \"stark29128\",\r\n    \"email\": \"eliot.balducci@aol.com\",\r\n    \"firstName\": \"Bruce\",\r\n    \"lastName\": \"Stark\",\r\n    \"dateOfBirth\": \"1993-08-24\"\r\n}",
@@ -63,7 +106,13 @@
       "name": "Retrieve User",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": {
           "raw": "http://127.0.0.1:{{port}}/users/1",
           "protocol": "http",
@@ -86,7 +135,13 @@
       "name": "Update User",
       "request": {
         "method": "PUT",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\r\n    \"username\": \"stark29128\",\r\n    \"email\": \"eliot.balducci@aol.com\",\r\n    \"firstName\": \"Stephen\",\r\n    \"lastName\": \"Stark\",\r\n    \"dateOfBirth\": \"1993-08-24\"\r\n}",
@@ -173,7 +228,13 @@
       "name": "Register Constellation",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\r\n    \"constellationName\": \"C3PO\",\r\n    \"galaxyId\": 54,\r\n    \"adderId\": 100,\r\n    \"verifierId\": null\r\n}",
@@ -227,7 +288,13 @@
       "name": "Update Constellation",
       "request": {
         "method": "PUT",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\r\n    \"constellationName\": \"C3POlicing\",\r\n    \"galaxyId\": 54,\r\n    \"adderId\": 100,\r\n    \"verifierId\": 24\r\n}",
@@ -259,7 +326,13 @@
       "name": "Delete Constellation",
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": {
           "raw": "http://127.0.0.1:{{port}}/constellations/101",
           "protocol": "http",
@@ -304,7 +377,13 @@
       "name": "Register Galaxy",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\r\n    \"galaxyName\": \"GAL-9ad0t\",\r\n    \"galaxyType\": \"Cluster\",\r\n\t\"distanceMly\": 4683,\r\n\t\"redshift\": 4,\r\n\t\"massSolar\": 5429,\r\n\t\"diameterLy\": 6445,\r\n    \"adderId\": 100,\r\n    \"verifierId\": 2\r\n}",
@@ -358,7 +437,13 @@
       "name": "Update Galaxy",
       "request": {
         "method": "PUT",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\r\n    \"galaxyName\": \"GAL-9ad0t\",\r\n    \"galaxyType\": \"Spiral\",\r\n\t\"distanceMly\": 4683,\r\n\t\"redshift\": 4,\r\n\t\"massSolar\": 5429,\r\n\t\"diameterLy\": 6445,\r\n    \"adderId\": 100,\r\n    \"verifierId\": 73\r\n}",
@@ -390,7 +475,13 @@
       "name": "Delete Galaxy",
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": {
           "raw": "http://127.0.0.1:{{port}}/galaxies/101",
           "protocol": "http",
@@ -435,7 +526,13 @@
       "name": "Register Star",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\r\n\t\"starName\": \"S-954eW\",\r\n\t\"starType\": \"Pulsar\",\r\n\t\"constellationId\": 101,\r\n\t\"rightAscension\": 45,\r\n\t\"declination\": -67,\r\n\t\"apparentMagnitude\": 1000,\r\n\t\"spectralType\": \"D\",\r\n\t\"adderId\": 16,\r\n\t\"verifierId\": null\r\n}",
@@ -489,7 +586,13 @@
       "name": "Update Star",
       "request": {
         "method": "PUT",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\r\n\t\"starName\": \"S-954eW\",\r\n\t\"starType\": \"Quasar\",\r\n\t\"constellationId\": 102,\r\n\t\"rightAscension\": 45,\r\n\t\"declination\": -67,\r\n\t\"apparentMagnitude\": 1000,\r\n\t\"spectralType\": \"D\",\r\n\t\"adderId\": 16,\r\n\t\"verifierId\": null\r\n}",
@@ -521,7 +624,13 @@
       "name": "Delete Star",
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": {
           "raw": "http://127.0.0.1:{{port}}/stars/101",
           "protocol": "http",
@@ -569,6 +678,10 @@
     {
       "key": "port",
       "value": "8000"
+    },
+    {
+      "key": "token",
+      "value": ""
     }
   ]
 }

@@ -5,7 +5,7 @@
 ![Maven](https://img.shields.io/badge/maven-3.9.12-orange)
 ![MySQL](https://img.shields.io/badge/mysql-9.6-purple)
 
-This project is a production-style REST API built with Spring Boot, designed to demonstrate clean backend architecture, maintainable service-layer logic, and real-world API design patterns.  It demonstrates a backend design using MVC architecture, layered services, DTO mapping, validation, exception handling, and database integration with MySQL.
+This project is a production-style REST API built with Spring Boot, designed to demonstrate clean backend architecture, maintainable service-layer logic, and real-world API design patterns.  It demonstrates a backend design using MVC architecture, layered services, DTO mapping, validation, exception handling, database integration with MySQL, and JWT-based authentication with role-based access control.
 
 This project serves two purposes:
 
@@ -24,6 +24,9 @@ Mermaid diagrams illustrate request flows, allowing readers to quickly grasp the
 - Validation using Jakarta Bean Validation
 - Global exception handling
 - MySQL database with Spring Data JPA
+- BCrypt password hashing
+- JWT-based authentication with Spring Security
+- Role-based access control (ADMIN and USER roles)
 - Unit testing using JUnit 5 and Mockito
 - Integration testing using Spring Boot Test and H2
 - Postman collection included
@@ -51,6 +54,21 @@ Mermaid diagrams illustrate request flows, allowing readers to quickly grasp the
 
 - **H2 with `MODE=MySQL`**
   Allows reuse of the existing `load.sql` seed script without modification, keeping a single source of truth for test data.
+
+- **Public GET endpoints for astronomy data**
+  Galaxies, constellations, and stars are non-sensitive read-only data — making their GET endpoints public reduces friction for consumers.  User endpoints remain protected because they return PII.
+
+- **Config-driven admin list**
+  Admin usernames are defined in `application.yaml` rather than a dedicated database role, avoiding schema changes to the legacy database.
+
+- **Sentinel password for forced password reset**
+  New users are assigned a BCrypt-encoded sentinel value as their password.  Login is blocked when the sentinel is detected, and the response includes the user's ID so the client can redirect them to `PATCH /users/{id}/change-password`.  The change-password endpoint is public to avoid a deadlock where a token is required to reset a password but a token cannot be obtained without resetting first.
+
+- **Stateless session management**
+  Spring Security is configured with `SessionCreationPolicy.STATELESS`.  No session is created or used; every request must carry a valid JWT.
+
+- **Custom `AuthenticationEntryPoint` returning 401**
+  Spring Security's default behavior returns HTTP 403 for unauthenticated requests, which is misleading.  A custom entry point returns HTTP 401, correctly indicating that the client has not authenticated.
 
 ## The Dataset
 
@@ -2647,6 +2665,8 @@ We now turn to unit tests for the new classes introduced in this chapter.  We st
 
 `JwtService` uses `jwtSecret` and `jwtExpiration`, which are injected via constructor parameters annotated with `@Value`.  Each test simply instantiates `JwtService`.
 
+In `src/test/java/com/sanjayrisbud/starzzboot/services` we create `JwtServiceTest`.
+
 Our first test verifies that a generated token contains the correct claims — subject (user ID), username, and role — by parsing it back through `extractAllClaims()` and `extractRole()`:
 
 ```java
@@ -2683,7 +2703,7 @@ Our third test verifies that parsing an expired token throws a `JwtException`.  
     }
 ```
 
-Next, we write `AuthServiceTest`.  The class setup follows the same pattern as our other service tests — `@Mock` for repositories and external services, `@InjectMocks` for the class under test — with two additions:
+Also in `src/test/java/com/sanjayrisbud/starzzboot/services` we create `AuthServiceTest`.  The class setup follows the same pattern as our other service tests — `@Mock` for repositories and external services, `@InjectMocks` for the class under test — with two additions:
 
 `AuthService` has a `sentinel` field injected via `@Value` through its constructor.  Mockito's `@InjectMocks` does not resolve `@Value`; it passes `null` for that parameter.  We correct this in `@BeforeEach` using `ReflectionTestUtils.setField()`.
 
@@ -2761,7 +2781,7 @@ We cover five scenarios in `AuthServiceTest`:
     }
 ```
 
-We also write `AuthControllerTest` using the same `@WebMvcTest` + `@AutoConfigureMockMvc(addFilters = false)` pattern as the other controller tests.  `AuthController` depends only on `AuthService`, but we still need `@MockitoBean JwtService` to satisfy `JwtAuthFilter`'s dependency.
+In `src/test/java/com/sanjayrisbud/starzzboot/controllers` we create `AuthControllerTest` using the same `@WebMvcTest` + `@AutoConfigureMockMvc(addFilters = false)` pattern as the other controller tests.  `AuthController` depends only on `AuthService`, but we still need `@MockitoBean JwtService` to satisfy `JwtAuthFilter`'s dependency.
 
 `AuthControllerTest` covers five scenarios:
 
@@ -2813,7 +2833,7 @@ We also write `AuthControllerTest` using the same `@WebMvcTest` + `@AutoConfigur
 
 **Invalid request data** and **malformed JSON** — both return HTTP 400, consistent with the other controller tests.
 
-Finally, we write `AuthControllerIT`.  Unlike the other integration tests, `AuthControllerIT` does not use `@WithMockUser` at all — its purpose is to verify the full login-to-access flow using real JWTs.  Each test creates its own user inline with a BCrypt-encoded password, similar to the approach in `UserControllerIT`.
+Finally, In `src/test/java/com/sanjayrisbud/integration` we create `AuthControllerIT`.  Unlike the other integration tests, `AuthControllerIT` does not use `@WithMockUser` at all — its purpose is to verify the full login-to-access flow using real JWTs.  Each test creates its own user inline with a BCrypt-encoded password, similar to the approach in `UserControllerIT`.
 
 We also update `src/test/resources/application.yaml` to replace `${JWT_SECRET}` with a hardcoded test value.  The production YAML reads the secret from an environment variable.  For tests, a hardcoded value in the test config is fine and actually better since it removes that dependency.
 
@@ -2872,4 +2892,4 @@ We also update `src/test/resources/application.yaml` to replace `${JWT_SECRET}` 
 
 ## Conclusion
 
-**starzz-boot** demonstrates a complete, production-style Spring Boot REST API built incrementally — from setting up routes and wiring in a MySQL database, to layering in DTO mapping, validation, and global exception handling, to covering the application with unit tests at the service and controller layers, verifying the full request lifecycle with integration tests backed by an in-memory H2 database, securing passwords using BCrypt hashing, and finally locking down the API with Spring Security and JWT-based authentication.  Each chapter builds on the last, reflecting how a real backend evolves in practice.
+**starzz-boot** demonstrates a complete, production-style Spring Boot REST API built incrementally — from setting up routes and wiring in a MySQL database, to layering in DTO mapping, validation, and global exception handling, to covering the application with unit and integration tests, to securing passwords with BCrypt hashing, and finally locking down the API with Spring Security, JWT-based authentication, and role-based access control.  Each chapter builds on the last, reflecting how a real backend evolves in practice.
